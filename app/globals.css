@@ -8,6 +8,25 @@
   --background-end-rgb: 255, 255, 255;
 }
 
+@keyframes textflow {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes footerPulse {
+  0%,
+  100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
@@ -93,4 +112,3 @@
     @apply bg-background text-foreground;
   }
 }
-

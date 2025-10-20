@@ -22,7 +22,7 @@ export default function Home() {
         className="absolute inset-0"
         squareSize={10}
         gridGap={10}
-        flickerChance={0.5}
+        flickerChance={0.3}
         color="rgba(0, 255, 157, 0.2)"
         maxOpacity={0.2}
       />

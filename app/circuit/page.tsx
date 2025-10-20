@@ -129,6 +129,21 @@ function CircuitMaker() {
   } | null>(null);
   const [nextLabelIndex, setNextLabelIndex] = useState(0);
 
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
+    null
+  );
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (pendingNode) {
+        setMousePos({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [pendingNode]);
+
   const nodeTypes = useMemo(() => {
     return {
       ip: Input,
@@ -328,6 +343,23 @@ function CircuitMaker() {
   return (
     <ReactFlowProvider>
       <div className="h-screen w-screen" ref={reactFlowWrapper}>
+        {pendingNode && mousePos && (
+          <div
+            className="pointer-events-none fixed z-50 opacity-70"
+            style={{
+              left: mousePos.x,
+              top: mousePos.y,
+            }}
+          >
+            <div
+              className="hidden md:block px-3 py-2 rounded-md text-white font-semibold shadow-md"
+              style={{ backgroundColor: pendingNode.gate?.color || "#444" }}
+            >
+              {pendingNode.gate?.name || "Node"}
+            </div>
+          </div>
+        )}
+
         <ReactFlow
           nodeTypes={nodeTypes}
           nodes={nodes.map((node) => {

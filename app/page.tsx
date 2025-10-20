@@ -3,11 +3,21 @@ import Image from "next/image";
 import D from "@/public/logic-gate-or-svgrepo-com.svg";
 import cir from "@/public/8bvaKz01 (1).svg";
 import Link from "next/link";
+import { FlickeringGrid } from "@/components/ui/shadcn-io/flickering-grid";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#1b1c1d] flex flex-col relative overflow-hidden">
-      <div className="flex flex-col justify-center items-center h-[92vh]">
+    <div className="min-h-screen bg-[#1b1c1d] flex flex-col overflow-hidden">
+      <div className="flex flex-col justify-center items-center h-[100vh]">
+        <FlickeringGrid
+          className="absolute inset-0"
+          squareSize={10}
+          gridGap={10}
+          flickerChance={0.5}
+          color="rgba(0, 145, 14, 1)"
+          maxOpacity={0.2}
+        />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-center justify-center text-center mb-6 z-10 gap-2 sm:gap-3">
           <div className="flex flex-row items-center gap-0">

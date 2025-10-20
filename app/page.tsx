@@ -8,7 +8,6 @@ import cir from "@/public/8bvaKz01 (1).svg";
 import { FlickeringGrid } from "@/components/ui/shadcn-io/flickering-grid";
 import Loader from "@/components/Loader";
 import { useState } from "react";
-import { loadBindings } from "next/dist/build/swc";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);

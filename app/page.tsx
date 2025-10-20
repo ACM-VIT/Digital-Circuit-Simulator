@@ -6,10 +6,17 @@ import { motion } from "framer-motion";
 import D from "@/public/logic-gate-or-svgrepo-com.svg";
 import cir from "@/public/8bvaKz01 (1).svg";
 import { FlickeringGrid } from "@/components/ui/shadcn-io/flickering-grid";
+import Loader from "@/components/Loader";
+import { useState } from "react";
+import { loadBindings } from "next/dist/build/swc";
 
 export default function Home() {
+  const [loading, setLoading] = useState(false);
+
   return (
     <div className="relative min-h-screen bg-[#0f0f0f] flex flex-col overflow-hidden text-white">
+      {loading && <Loader />}
+
       {/* --- Animated Background Layers --- */}
       <FlickeringGrid
         className="absolute inset-0"
@@ -74,6 +81,9 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             whileHover={{ scale: 1.08 }}
+            onClick={() => {
+              setLoading(true);
+            }}
             className="button-glow relative overflow-hidden px-10 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 text-black font-bold text-2xl shadow-[0_0_25px_rgba(0,255,157,0.3)] transition-all duration-300"
           >
             <span className="relative z-10">Try it out!</span>

@@ -1,0 +1,55 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="#1a1a2e" stroke="#16213e" stroke-width="4"/>
+  
+  <!-- Circuit Board Pattern -->
+  <g opacity="0.3">
+    <!-- Horizontal lines -->
+    <line x1="50" y1="150" x2="150" y2="150" stroke="#0f3460" stroke-width="2"/>
+    <line x1="362" y1="150" x2="462" y2="150" stroke="#0f3460" stroke-width="2"/>
+    <line x1="50" y1="362" x2="150" y2="362" stroke="#0f3460" stroke-width="2"/>
+    <line x1="362" y1="362" x2="462" y2="362" stroke="#0f3460" stroke-width="2"/>
+    
+    <!-- Vertical lines -->
+    <line x1="150" y1="50" x2="150" y2="150" stroke="#0f3460" stroke-width="2"/>
+    <line x1="362" y1="50" x2="362" y2="150" stroke="#0f3460" stroke-width="2"/>
+    <line x1="150" y1="362" x2="150" y2="462" stroke="#0f3460" stroke-width="2"/>
+    <line x1="362" y1="362" x2="362" y2="462" stroke="#0f3460" stroke-width="2"/>
+  </g>
+  
+  <!-- Main Logic Gate (AND gate shape) -->
+  <g transform="translate(256, 256)">
+    <!-- Gate body -->
+    <path d="M -80 -60 L -80 60 L 0 60 Q 80 60 80 0 Q 80 -60 0 -60 Z" 
+          fill="#e94560" 
+          stroke="#ff6b9d" 
+          stroke-width="3"/>
+    
+    <!-- Input pins -->
+    <circle cx="-80" cy="-30" r="8" fill="#00d9ff" stroke="#00adb5" stroke-width="2"/>
+    <circle cx="-80" cy="30" r="8" fill="#00d9ff" stroke="#00adb5" stroke-width="2"/>
+    
+    <!-- Output pin -->
+    <circle cx="80" cy="0" r="8" fill="#00ff88" stroke="#00cc6a" stroke-width="2"/>
+    
+    <!-- Connection lines -->
+    <line x1="-120" y1="-30" x2="-88" y2="-30" stroke="#00d9ff" stroke-width="3"/>
+    <line x1="-120" y1="30" x2="-88" y2="30" stroke="#00d9ff" stroke-width="3"/>
+    <line x1="88" y1="0" x2="120" y2="0" stroke="#00ff88" stroke-width="3"/>
+    
+    <!-- Connection dots -->
+    <circle cx="-120" cy="-30" r="5" fill="#00d9ff"/>
+    <circle cx="-120" cy="30" r="5" fill="#00d9ff"/>
+    <circle cx="120" cy="0" r="5" fill="#00ff88"/>
+  </g>
+  
+  <!-- Decorative circuit nodes -->
+  <circle cx="100" cy="100" r="6" fill="#00d9ff" opacity="0.6"/>
+  <circle cx="412" cy="100" r="6" fill="#00d9ff" opacity="0.6"/>
+  <circle cx="100" cy="412" r="6" fill="#00d9ff" opacity="0.6"/>
+  <circle cx="412" cy="412" r="6" fill="#00d9ff" opacity="0.6"/>
+  
+  <!-- Accent circles for tech feel -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#0f3460" stroke-width="1" opacity="0.3"/>
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#0f3460" stroke-width="1" opacity="0.2"/>
+</svg>

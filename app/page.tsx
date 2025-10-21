@@ -3,6 +3,7 @@ import Image from "next/image";
 import D from "@/public/logic-gate-or-svgrepo-com.svg";
 import cir from "@/public/8bvaKz01 (1).svg";
 import Link from "next/link";
+import { LoaderButton } from "@/components/LoaderButton";
 
 export default function Home() {
   return (
@@ -40,9 +41,7 @@ export default function Home() {
         </div>
 
         <Link href="/circuit" className="z-10">
-          <button className="mt-10 px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 text-black font-bold text-2xl shadow-[0_0_20px_rgba(0,255,157,0.3)] hover:shadow-[0_0_40px_rgba(0,255,157,0.6)] hover:scale-105 transition-all duration-300">
-            Try it out!
-          </button>
+          <LoaderButton label="Try it Out!" />
         </Link>
       </div>
 

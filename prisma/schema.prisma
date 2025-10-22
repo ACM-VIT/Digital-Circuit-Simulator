@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - using Clerk user ID as primary identifier
+model User {
+  id                    String    @id @default(cuid())
+  clerk_user_id         String    @unique
+  email                 String    @unique
+  email_verified        Boolean   @default(false)
+  first_name            String?
+  last_name             String?
+  username              String?   @unique
+  image_url             String?
+  phone_number          String?
+  phone_verified        Boolean   @default(false)
+  last_sign_in_at       DateTime?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  // Relations
+  circuits              Circuit[]
+  categories            Category[]
+  labels                Label[]
+
+  @@map("users")
+}
+
+// Circuit model - stores user's circuit designs
+model Circuit {
+  id            String    @id @default(cuid())
+  clerk_user_id String
+  name          String
+  description   String?
+  circuit_data Json      // Stores ReactFlow nodes, edges, and viewport
+  is_public     Boolean   @default(false)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relations
+  user          User      @relation(fields: [clerk_user_id], references: [clerk_user_id])
+  categories    CircuitCategory[]
+  labels        CircuitLabel[]
+
+  @@map("circuits")
+  @@index([clerk_user_id])
+  @@index([created_at])
+}
+
+// Category model - for organizing circuits
+model Category {
+  id            String    @id @default(cuid())
+  clerk_user_id String
+  name          String
+  color         String?   @default("#3B82F6")
+  description   String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relations
+  user          User      @relation(fields: [clerk_user_id], references: [clerk_user_id])
+  circuits      CircuitCategory[]
+
+  @@map("categories")
+  @@index([clerk_user_id])
+}
+
+// Label model - for tagging circuits
+model Label {
+  id            String    @id @default(cuid())
+  clerk_user_id String
+  name          String
+  color         String?   @default("#10B981")
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relations
+  user          User      @relation(fields: [clerk_user_id], references: [clerk_user_id])
+  circuits      CircuitLabel[]
+
+  @@map("labels")
+  @@index([clerk_user_id])
+}
+
+// Junction table for circuit-category many-to-many relationship
+model CircuitCategory {
+  circuit_id  String
+  category_id  String
+
+  circuit     Circuit  @relation(fields: [circuit_id], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@id([circuit_id, category_id])
+  @@map("circuit_categories")
+}
+
+// Junction table for circuit-label many-to-many relationship
+model CircuitLabel {
+  circuit_id  String
+  label_id     String
+
+  circuit     Circuit @relation(fields: [circuit_id], references: [id], onDelete: Cascade)
+  label       Label   @relation(fields: [label_id], references: [id], onDelete: Cascade)
+
+  @@id([circuit_id, label_id])
+  @@map("circuit_labels")
+}

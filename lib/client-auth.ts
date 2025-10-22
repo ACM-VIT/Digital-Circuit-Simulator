@@ -4,15 +4,6 @@ import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
 import { DatabaseUser } from '@/lib/auth'
 
-/**
- * Client-side authentication utilities
- * Use these in your React components
- */
-
-/**
- * Hook to get the current user from the database
- * Automatically syncs user data when component mounts
- */
 export function useDatabaseUser() {
   const { user: clerkUser, isLoaded } = useUser()
   const [dbUser, setDbUser] = useState<DatabaseUser | null>(null)
@@ -66,10 +57,6 @@ export function useDatabaseUser() {
   }
 }
 
-/**
- * Hook to get user data without automatic syncing
- * Use this when you just need to check if user exists in database
- */
 export function useDatabaseUserQuery() {
   const { user: clerkUser, isLoaded } = useUser()
   const [dbUser, setDbUser] = useState<DatabaseUser | null>(null)

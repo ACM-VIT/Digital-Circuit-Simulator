@@ -17,20 +17,14 @@ export interface DatabaseUser {
   updated_at: Date
 }
 
-/**
- * Syncs the current Clerk user with the database
- * Creates user if doesn't exist, updates if exists
- */
 export async function syncUserWithDatabase(): Promise<DatabaseUser | null> {
   try {
-    // First try to get user ID from auth
     const { userId } = await auth()
     
     if (!userId) {
       return null
     }
 
-    // Then get full user data
     const clerkUser = await currentUser()
     
     if (!clerkUser) {
@@ -101,25 +95,18 @@ export async function syncUserWithDatabase(): Promise<DatabaseUser | null> {
   }
 }
 
-/**
- * Gets the current user from the database
- * Automatically syncs with Clerk if needed
- */
 export async function getCurrentUser(): Promise<DatabaseUser | null> {
   try {
-    // First check if user is authenticated
     const { userId } = await auth()
     
     if (!userId) {
       return null
     }
 
-    // First try to get user from database
     let dbUser = await prisma.user.findUnique({
       where: { clerk_user_id: userId }
     })
 
-    // If user doesn't exist in database, sync them
     if (!dbUser) {
       dbUser = await syncUserWithDatabase()
     }
@@ -131,9 +118,6 @@ export async function getCurrentUser(): Promise<DatabaseUser | null> {
   }
 }
 
-/**
- * Gets user by Clerk user ID from database
- */
 export async function getUserByClerkId(clerkUserId: string): Promise<DatabaseUser | null> {
   try {
     return await prisma.user.findUnique({

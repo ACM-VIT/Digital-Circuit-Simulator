@@ -3,27 +3,152 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --background: #101112;
+  --foreground: #d9d9d9;
+  --card: #272829;
+  --card-foreground: #ffffff;
+  --card-border: #1a1a1a;
+  --primary: #7a7fee;
+  --primary-foreground: #ffffff;
+  --secondary: #272829;
+  --secondary-foreground: #ffffff;
+  --muted: #a1a1aa;
+  --muted-foreground: #d4d4d8;
+  --accent: #2a2a2a;
+  --accent-foreground: #ffffff;
+  --border: #2a2a2a;
+  --input: #2a2a2a;
+  --ring: #7a7fee;
+  --radius: 0.75rem;
+  --font-outfit: "Outfit", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-outfit);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  h1 {
+    font-weight: 500;
+    font-size: 60px;
+    line-height: 1.2em;
+    letter-spacing: 0;
+  }
+
+  h2 {
+    font-weight: 400;
+    font-size: 48px;
+    line-height: 1.2em;
+    letter-spacing: 0;
+  }
+
+  @media (max-width: 1440px) {
+    h1 {
+      font-size: calc(40px + (60 - 40) * ((100vw - 768px) / (1440 - 768)));
+    }
+    h2 {
+      font-size: calc(36px + (48 - 36) * ((100vw - 768px) / (1440 - 768)));
+    }
+  }
+
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 40px;
+    }
+    h2 {
+      font-size: 36px;
+    }
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+@layer components {
+  .container {
+    @apply mx-auto px-4 sm:px-6 lg:px-8;
+    max-width: 1200px;
+  }
+
+  .card {
+    background-color: var(--card);
+    color: var(--card-foreground);
+    border: 1px solid var(--card-border);
+    @apply rounded-3xl overflow-hidden shadow-md;
+  }
+
+  .dark .card {
+    background-color: var(--card);
+    background-image: linear-gradient(to bottom, #2d2e2f, #272829);
+    position: relative;
+  }
+
+  .dark .card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("/noise-texture.png");
+    background-size: 200px;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  .btn-primary {
+    background-color: #7a7fee;
+    color: #ffffff;
+    @apply px-6 py-2.5 rounded-md hover:bg-opacity-90 transition-all text-sm font-medium shadow-sm;
+  }
+
+  .btn-secondary {
+    color: var(--foreground);
+    @apply hover:underline transition-all text-sm font-medium py-2.5;
+  }
+
+  .section-title {
+    @apply font-medium mb-2;
+    color: var(--foreground);
+  }
+
+  .section-subtitle {
+    color: #7a7fee;
+    @apply font-medium mb-6;
+  }
+
+  .accent-text {
+    color: #7a7fee;
+  }
+
+  /* Mobile menu styles */
+  .mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+  }
+
+  .mobile-menu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 85%;
+    max-width: 320px;
+    background-color: var(--background);
+    z-index: 101;
+    overflow-y: auto;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  }
 }
 
 @layer utilities {

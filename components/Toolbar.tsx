@@ -13,24 +13,11 @@ import {
   Cpu,
   X,
 } from "lucide-react";
-
-interface GateType {
-  id: string;
-  color: string;
-  name: string;
-  inputs?: string[];
-  outputs: { [key: string]: string };
-  circuit?: { gates: GateType[]; wires: Wire[] };
-}
-
-interface Wire {
-  source: string;
-  target: string;
-}
+import { GateType, PendingNode } from "@/types";
 
 interface ToolbarProps {
   paletteOpen: boolean;
-  pendingNode: { type: string; gate?: GateType } | null;
+  pendingNode: PendingNode | null;
   nextLabelIndex: number;
   GateList: GateType[];
   onTogglePalette: () => void;

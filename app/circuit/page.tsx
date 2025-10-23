@@ -130,6 +130,7 @@ function CircuitMaker() {
   const [outputValues, setOutputValues] = useState<{ [key: string]: boolean }>(
     {}
   );
+  const previousOutputValues = useRef<{ [key: string]: boolean }>({});
   const [paletteOpen, setPaletteOpen] = useState(true);
   const [pendingNode, setPendingNode] = useState<{
     type: string;
@@ -312,73 +313,107 @@ function CircuitMaker() {
     function simulateCircuit(
       nodes: Node[],
       edges: Edge[],
-      inputValues: { [key: string]: boolean }
+      inputValues: { [key: string]: boolean },
+      prevOutputValues: { [key: string]: boolean }
     ) {
       const inputs = nodes.filter((node) => node.type === "ip");
       const nodeStates = new Map<string, boolean>();
-      let queue: Node[] = [];
-
+      
+      
       inputs.forEach((input) => {
         nodeStates.set(input.id + "-o", inputValues[input.id] ?? false);
-        queue = [...queue, ...getOutgoers(input, nodes, edges)];
       });
 
-      function calculateNode(node: Node) {
+      nodes.forEach((node) => {
         if (node.type === "gate") {
-          const gate_inputs = edges
-            .filter((edge) => edge.target === node.id)
-            .map((edge) => {
-              const sourceValue = nodeStates.get(edge.sourceHandle!) ?? false;
-              nodeStates.set(edge.targetHandle!, sourceValue);
-              return `${edge.targetHandle!.split("-").pop()}=${sourceValue}`;
-            })
-            .join(",");
+          node.data.inputs.forEach((input: string) => {
+            const prevValue = prevOutputValues[node.id + "-i-" + input] ?? false;
+            nodeStates.set(node.id + "-i-" + input, prevValue);
+          });
+          
+          Object.keys(node.data.outputs).forEach((output) => {
+            const prevValue = prevOutputValues[node.id + "-o-" + output] ?? false;
+            nodeStates.set(node.id + "-o-" + output, prevValue);
+          });
+        }
+      });
 
-          if (!Object.values(node.data.outputs).includes(null)) {
+      const MAX_ITERATIONS = 100; // for preventing infinity and black screen
+      let iteration = 0;
+      let hasChanges = true;
+
+      while (hasChanges && iteration < MAX_ITERATIONS) {
+        hasChanges = false;
+        iteration++;
+        nodes.forEach((node) => {
+          if (node.type === "gate") {
+            const gateInputs: { [key: string]: boolean } = {};
+            
+            edges
+              .filter((edge) => edge.target === node.id)
+              .forEach((edge) => {
+                const sourceValue = nodeStates.get(edge.sourceHandle!) ?? false;
+                const inputName = edge.targetHandle!.split("-").pop()!;
+                gateInputs[inputName] = sourceValue;
+                                const targetHandle = edge.targetHandle!;
+                const prevValue = nodeStates.get(targetHandle);
+                if (prevValue !== sourceValue) {
+                  nodeStates.set(targetHandle, sourceValue);
+                }
+              });
+
             Object.keys(node.data.outputs).forEach((output) => {
-              let result: boolean;
-              const current = nodeStates.get(node.id + "-o-" + output);
-              console.log(
-                `const ${gate_inputs}; return ${node.data.outputs[output]}`
-              );
-              result = new Function(
-                `let ${node.data.inputs
-                  .map((i: string) => i + "=false")
-                  .join(",")};${gate_inputs}; return ${
-                  node.data.outputs[output]
-                }`
-              )();
+              const outputHandle = node.id + "-o-" + output;
+              const currentValue = nodeStates.get(outputHandle) ?? false;
+              
+              try {
+                const inputAssignments = node.data.inputs
+                  .map((i: string) => {
+                    const value = gateInputs[i] ?? false;
+                    return `${i}=${value}`;
+                  })
+                  .join(",");
 
-              if (current !== result) {
-                nodeStates.set(node.id + "-o-" + output, result);
-                getOutgoers(node, nodes, edges).forEach((node) =>
-                  queue.push(node)
-                );
+                const expression = node.data.outputs[output];
+                const result = new Function(
+                  `let ${inputAssignments}; return ${expression}`
+                )();
+
+                if (currentValue !== result) {
+                  nodeStates.set(outputHandle, result);
+                  hasChanges = true;
+                }
+              } catch (error) {
+                console.error(`Error evaluating gate ${node.id}:`, error);
               }
             });
-          } else {
+          } else if (node.type === "op") {
+            // Update output nodes
+            const source = edges.find((edge) => edge.target === node.id);
+            if (source) {
+              const sourceValue = nodeStates.get(source.sourceHandle!) ?? false;
+              const targetHandle = node.id + "-i";
+              const currentValue = nodeStates.get(targetHandle);
+              
+              if (currentValue !== sourceValue) {
+                nodeStates.set(targetHandle, sourceValue);
+                hasChanges = true;
+              }
+            }
           }
-        }
-
-        if (node.type === "op") {
-          console.log(node.id);
-          const source = edges.find((edge) => edge.target === node.id);
-          if (source) {
-            const sourceValue = nodeStates.get(source.sourceHandle!) ?? false;
-            nodeStates.set(node.id + "-i", sourceValue);
-          }
-        }
+        });
       }
 
-      while (queue.length > 0) {
-        const node = queue.shift()!;
-        calculateNode(node);
+      if (iteration >= MAX_ITERATIONS) {
+        console.warn("Circuit simulation reached maximum iterations - possible oscillation or complex feedback");
       }
 
       return Object.fromEntries(nodeStates.entries());
     }
 
-    setOutputValues(simulateCircuit(nodes, edges, inputValues));
+    const newOutputValues = simulateCircuit(nodes, edges, inputValues, previousOutputValues.current);
+    setOutputValues(newOutputValues);
+    previousOutputValues.current = newOutputValues;
   }, [edges, inputValues, nodes]);
 
   useEffect(() => {

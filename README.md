@@ -39,6 +39,8 @@
 ## About
 This Digital Circuit Simulator provides an interactive platform for learning and experimenting with digital logic circuits. Built with modern web technologies, it offers a drag-and-drop interface where users can:
 
+> **Note:** This repository is forked from [kairavsheth/digital-circuit-simulator](https://github.com/kairavsheth/digital-circuit-simulator)
+
 - **Design circuits visually** using logic gates (AND, OR, NOT, NAND, NOR, XOR, XNOR)
 - **Connect components** with interactive wires and handles
 - **Test circuits in real-time** with input switches and output displays
@@ -163,8 +165,21 @@ Join us for Hacktoberfest! Quality > quantity.
 
 ## Authors
 
-**Authors:** <!-- [author1's name](link), [author2's name](link) -->  
-**Contributors:** <!-- Generate contributors list using https://contributors-img.web.app/preview -->
+<div align="center">
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/kairavsheth">
+        <img src="https://github.com/kairavsheth.png" width="100" height="100" style="border: 3px solid #4CAF50; border-radius: 50%;">
+        <br>
+        <sub><b>Kairav Nitin Sheth</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
+
+</div>
 
 ---
 

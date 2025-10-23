@@ -28,12 +28,14 @@ import Input from "@/app/circuit/components/nodes/input";
 import Output from "@/app/circuit/components/nodes/output";
 import Gate from "@/app/circuit/components/nodes/gate";
 import Toolbar from "@/components/Toolbar";
-import SaveCircuitModal, { SaveCircuitData } from "@/components/SaveCircuitModal";
+import SaveCircuitModal, {
+  SaveCircuitData,
+} from "@/components/SaveCircuitModal";
 import CircuitLibrary from "@/components/CircuitLibrary";
 import ConfirmationModal from "@/components/ConfirmationModal";
-import { useUser } from '@clerk/nextjs';
-import { Save, FolderOpen, User, Plus } from 'lucide-react';
-import UserSync from '@/components/UserSync';
+import { useUser } from "@clerk/nextjs";
+import { Save, FolderOpen, User, Plus } from "lucide-react";
+import UserSync from "@/components/UserSync";
 
 const indexToLabel = (index: number): string => {
   let result = "";
@@ -149,7 +151,7 @@ function CircuitMaker() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const circuitId = urlParams.get('load');
+    const circuitId = urlParams.get("load");
     if (circuitId && user) {
       loadCircuitFromUrl(circuitId);
     }
@@ -157,11 +159,11 @@ function CircuitMaker() {
 
   const updateUrlWithCircuitId = (circuitId: string) => {
     const newUrl = `/circuit?load=${circuitId}`;
-    window.history.pushState({}, '', newUrl);
+    window.history.pushState({}, "", newUrl);
   };
 
   const cleanUrl = () => {
-    window.history.pushState({}, '', '/circuit');
+    window.history.pushState({}, "", "/circuit");
   };
 
   const startNewCircuit = () => {
@@ -181,19 +183,19 @@ function CircuitMaker() {
     setLoading(true);
     try {
       const response = await fetch(`/api/circuits/${circuitId}`);
-      
+
       if (response.ok) {
         const circuit = await response.json();
         handleLoadCircuit(circuit);
       } else if (response.status === 404) {
-        alert('Circuit not found or you don\'t have access to it.');
+        alert("Circuit not found or you don't have access to it.");
       } else if (response.status === 401) {
-        alert('Please sign in to access this circuit.');
+        alert("Please sign in to access this circuit.");
       } else {
-        alert('Error loading circuit. Please try again.');
+        alert("Error loading circuit. Please try again.");
       }
     } catch (error) {
-      alert('Network error loading circuit. Please check your connection.');
+      alert("Network error loading circuit. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -307,7 +309,6 @@ function CircuitMaker() {
   );
 
   useEffect(() => {
-
     function simulateCircuit(
       nodes: Node[],
       edges: Edge[],
@@ -403,14 +404,17 @@ function CircuitMaker() {
 
     setSaving(true);
     try {
-      const nodesWithCurrentValues = nodes.map(node => ({
+      const nodesWithCurrentValues = nodes.map((node) => ({
         ...node,
         data: {
           ...node.data,
-          value: node.type === 'ip' ? inputValues[node.id] : 
-                 node.type === 'op' ? outputValues[node.id] : 
-                 node.data.value
-        }
+          value:
+            node.type === "ip"
+              ? inputValues[node.id]
+              : node.type === "op"
+              ? outputValues[node.id]
+              : node.data.value,
+        },
       }));
 
       const circuitData = {
@@ -418,30 +422,30 @@ function CircuitMaker() {
         edges,
         viewport: reactFlowInstance?.getViewport() || { x: 0, y: 0, zoom: 1 },
         inputValues,
-        outputValues
+        outputValues,
       };
 
-      const response = await fetch('/api/circuits', {
-        method: 'POST',
+      const response = await fetch("/api/circuits", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: data.name,
           description: data.description,
           circuit_data: circuitData,
           category_ids: data.category_ids,
-          label_ids: data.label_ids
+          label_ids: data.label_ids,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save circuit');
+        throw new Error("Failed to save circuit");
       }
 
-      console.log('Circuit saved successfully');
+      console.log("Circuit saved successfully");
     } catch (error) {
-      console.error('Error saving circuit:', error);
+      console.error("Error saving circuit:", error);
       throw error;
     } finally {
       setSaving(false);
@@ -452,72 +456,72 @@ function CircuitMaker() {
     setLoading(true);
     try {
       const circuitData = circuit.circuit_data;
-      
+
       updateUrlWithCircuitId(circuit.id);
       setCurrentCircuitId(circuit.id);
-      
-      const transformedNodes = circuitData.nodes?.map((node: any) => ({
-        ...node,
-        data: {
-          ...node.data,
-          id: node.id,
-          type: node.type,
-          position: node.position || { x: 0, y: 0 },
-          ...node.data
-        }
-      })) || [];
-      
-      const transformedEdges = circuitData.edges?.map((edge: any) => ({
-        ...edge,
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        sourceHandle: edge.sourceHandle,
-        targetHandle: edge.targetHandle,
-        ...edge
-      })) || [];
-      
+
+      const transformedNodes =
+        circuitData.nodes?.map((node: any) => ({
+          ...node,
+          data: {
+            ...node.data,
+            id: node.id,
+            type: node.type,
+            position: node.position || { x: 0, y: 0 },
+            ...node.data,
+          },
+        })) || [];
+
+      const transformedEdges =
+        circuitData.edges?.map((edge: any) => ({
+          ...edge,
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          sourceHandle: edge.sourceHandle,
+          targetHandle: edge.targetHandle,
+          ...edge,
+        })) || [];
+
       setNodes(transformedNodes);
       setEdges(transformedEdges);
-      
+
       let newInputValues: { [key: string]: boolean } = {};
       let newOutputValues: { [key: string]: boolean } = {};
-      
+
       if (circuitData.inputValues && circuitData.outputValues) {
         newInputValues = circuitData.inputValues;
         newOutputValues = circuitData.outputValues;
       } else {
         transformedNodes.forEach((node: any) => {
-          if (node.type === 'ip') {
+          if (node.type === "ip") {
             newInputValues[node.id] = node.data.value || false;
-          } else if (node.type === 'op') {
+          } else if (node.type === "op") {
             newOutputValues[node.id] = node.data.value || false;
           }
         });
       }
-      
+
       setInputValues(newInputValues);
       setOutputValues(newOutputValues);
-      
+
       setShowLibrary(false);
-      
+
       setTimeout(() => {
         if (circuitData.viewport && reactFlowInstance) {
           reactFlowInstance.setViewport(circuitData.viewport);
         }
-        
+
         setTimeout(() => {
           if (reactFlowInstance) {
             reactFlowInstance.fitView({ padding: 0.1 });
-            setNodes(prev => [...prev]);
-            setEdges(prev => [...prev]);
+            setNodes((prev) => [...prev]);
+            setEdges((prev) => [...prev]);
           }
-          
+
           setLoading(false);
         }, 200);
-        
       }, 100);
-      
     } catch (error) {
       setLoading(false);
     }
@@ -558,8 +562,15 @@ function CircuitMaker() {
                       return { ...prevState, [node.id]: !prevState[node.id] };
                     });
                   },
-                  remove: () =>
-                    setNodes((prev) => prev.filter((n) => n.id !== node.id)),
+                  remove: () => {
+                    setNodes((prev) => prev.filter((n) => n.id !== node.id));
+                    setEdges((prev) =>
+                      prev.filter(
+                        (edge) =>
+                          edge.source !== node.id && edge.target !== node.id
+                      )
+                    );
+                  },
                 },
               };
             }
@@ -569,8 +580,15 @@ function CircuitMaker() {
                 data: {
                   ...node.data,
                   value: outputValues[node.id + "-i"] ?? false,
-                  remove: () =>
-                    setNodes((prev) => prev.filter((n) => n.id !== node.id)),
+                  remove: () => {
+                    setNodes((prev) => prev.filter((n) => n.id !== node.id));
+                    setEdges((prev) =>
+                      prev.filter(
+                        (edge) =>
+                          edge.source !== node.id && edge.target !== node.id
+                      )
+                    );
+                  },
                 },
               };
             }
@@ -600,8 +618,15 @@ function CircuitMaker() {
                     ];
                   })
                 ),
-                remove: () =>
-                  setNodes((prev) => prev.filter((n) => n.id !== node.id)),
+                remove: () => {
+                  setNodes((prev) => prev.filter((n) => n.id !== node.id));
+                  setEdges((prev) =>
+                    prev.filter(
+                      (edge) =>
+                        edge.source !== node.id && edge.target !== node.id
+                    )
+                  );
+                },
               },
             };
           })}
@@ -646,7 +671,7 @@ function CircuitMaker() {
             <Plus className="w-4 h-4" />
             <span className="text-sm font-medium">New Circuit</span>
           </button>
-          
+
           <button
             onClick={() => setShowLibrary(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-300 hover:bg-blue-500/30 transition-colors"
@@ -654,7 +679,7 @@ function CircuitMaker() {
             <FolderOpen className="w-4 h-4" />
             <span className="text-sm font-medium">My Circuits</span>
           </button>
-          
+
           <button
             onClick={() => setShowSaveModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors"
@@ -665,7 +690,9 @@ function CircuitMaker() {
 
           <div className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-full">
             <User className="w-4 h-4 text-white/70" />
-            <span className="text-sm text-white/90">{user.firstName || user.emailAddresses[0]?.emailAddress}</span>
+            <span className="text-sm text-white/90">
+              {user.firstName || user.emailAddresses[0]?.emailAddress}
+            </span>
           </div>
         </div>
       )}

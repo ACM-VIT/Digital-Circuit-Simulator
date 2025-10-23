@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Orbitron } from "next/font/google";
+import { ClerkProvider } from '@clerk/nextjs';
 
 const orbitron = Orbitron({
   subsets: ["latin"],
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
     siteName: "Digital Circuit Simulator",
     images: [
       {
-        url: "/og-image.png",
+        url: "/logo.svg",
         width: 1200,
         height: 630,
         alt: "Digital Circuit Simulator - Interactive Logic Gate Design"
@@ -46,7 +47,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Digital Circuit Simulator | ACM VIT",
     description: "A web-based digital logic circuit simulator for designing and testing digital circuits in your browser.",
-    images: ["/twitter-image.png"],
+    images: ["/logo.svg"],
     creator: "@acmvit"
   },
   robots: {
@@ -63,7 +64,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png"
+    apple: "/logo.svg"
   },
   manifest: "/manifest.json"
 };
@@ -74,8 +75,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={orbitron.className}>{children}</body>
-    </html>
+    <ClerkProvider
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+    >
+      <html lang="en">
+        <body className={orbitron.className}>{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }

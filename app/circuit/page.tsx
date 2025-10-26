@@ -36,6 +36,7 @@ import ConfirmationModal from "@/components/ConfirmationModal";
 import { useUser } from "@clerk/nextjs";
 import { Save, FolderOpen, User, Plus } from "lucide-react";
 import UserSync from "@/components/UserSync";
+import Link from "next/link";
 
 const indexToLabel = (index: number): string => {
   let result = "";
@@ -318,8 +319,7 @@ function CircuitMaker() {
     ) {
       const inputs = nodes.filter((node) => node.type === "ip");
       const nodeStates = new Map<string, boolean>();
-      
-      
+
       inputs.forEach((input) => {
         nodeStates.set(input.id + "-o", inputValues[input.id] ?? false);
       });
@@ -327,12 +327,14 @@ function CircuitMaker() {
       nodes.forEach((node) => {
         if (node.type === "gate") {
           node.data.inputs.forEach((input: string) => {
-            const prevValue = prevOutputValues[node.id + "-i-" + input] ?? false;
+            const prevValue =
+              prevOutputValues[node.id + "-i-" + input] ?? false;
             nodeStates.set(node.id + "-i-" + input, prevValue);
           });
-          
+
           Object.keys(node.data.outputs).forEach((output) => {
-            const prevValue = prevOutputValues[node.id + "-o-" + output] ?? false;
+            const prevValue =
+              prevOutputValues[node.id + "-o-" + output] ?? false;
             nodeStates.set(node.id + "-o-" + output, prevValue);
           });
         }
@@ -348,14 +350,14 @@ function CircuitMaker() {
         nodes.forEach((node) => {
           if (node.type === "gate") {
             const gateInputs: { [key: string]: boolean } = {};
-            
+
             edges
               .filter((edge) => edge.target === node.id)
               .forEach((edge) => {
                 const sourceValue = nodeStates.get(edge.sourceHandle!) ?? false;
                 const inputName = edge.targetHandle!.split("-").pop()!;
                 gateInputs[inputName] = sourceValue;
-                                const targetHandle = edge.targetHandle!;
+                const targetHandle = edge.targetHandle!;
                 const prevValue = nodeStates.get(targetHandle);
                 if (prevValue !== sourceValue) {
                   nodeStates.set(targetHandle, sourceValue);
@@ -365,7 +367,7 @@ function CircuitMaker() {
             Object.keys(node.data.outputs).forEach((output) => {
               const outputHandle = node.id + "-o-" + output;
               const currentValue = nodeStates.get(outputHandle) ?? false;
-              
+
               try {
                 const inputAssignments = node.data.inputs
                   .map((i: string) => {
@@ -394,7 +396,7 @@ function CircuitMaker() {
               const sourceValue = nodeStates.get(source.sourceHandle!) ?? false;
               const targetHandle = node.id + "-i";
               const currentValue = nodeStates.get(targetHandle);
-              
+
               if (currentValue !== sourceValue) {
                 nodeStates.set(targetHandle, sourceValue);
                 hasChanges = true;
@@ -405,13 +407,20 @@ function CircuitMaker() {
       }
 
       if (iteration >= MAX_ITERATIONS) {
-        console.warn("Circuit simulation reached maximum iterations - possible oscillation or complex feedback");
+        console.warn(
+          "Circuit simulation reached maximum iterations - possible oscillation or complex feedback"
+        );
       }
 
       return Object.fromEntries(nodeStates.entries());
     }
 
-    const newOutputValues = simulateCircuit(nodes, edges, inputValues, previousOutputValues.current);
+    const newOutputValues = simulateCircuit(
+      nodes,
+      edges,
+      inputValues,
+      previousOutputValues.current
+    );
     setOutputValues(newOutputValues);
     previousOutputValues.current = newOutputValues;
   }, [edges, inputValues, nodes]);
@@ -723,12 +732,14 @@ function CircuitMaker() {
             <span className="text-sm font-medium">Save Circuit</span>
           </button>
 
-          <div className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-full">
-            <User className="w-4 h-4 text-white/70" />
-            <span className="text-sm text-white/90">
-              {user.firstName || user.emailAddresses[0]?.emailAddress}
-            </span>
-          </div>
+          <Link href="/dashboard">
+            <button className="flex items-center gap-2 px-3 py-2 bg-white/10 border-white/20  hover:bg-white/20 rounded-full">
+              <User className="w-4 h-4 text-white/70" />
+              <span className="text-sm text-white/90">
+                {user.firstName || user.emailAddresses[0]?.emailAddress}
+              </span>
+            </button>
+          </Link>
         </div>
       )}
 

@@ -28,6 +28,7 @@ import Input from "@/app/circuit/components/nodes/input";
 import Output from "@/app/circuit/components/nodes/output";
 import Gate from "@/app/circuit/components/nodes/gate";
 import Toolbar from "@/components/Toolbar";
+import Library from "@/components/Library";
 import SaveCircuitModal, {
   SaveCircuitData,
 } from "@/components/SaveCircuitModal";
@@ -704,6 +705,8 @@ function CircuitMaker() {
         onPaletteSelect={handlePaletteSelect}
         indexToLabel={indexToLabel}
       />
+
+      <Library />
 
       {/* User Actions */}
       {isLoaded && user && (

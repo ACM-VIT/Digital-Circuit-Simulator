@@ -268,7 +268,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="absolute top-6 left-6 z-50 flex items-center gap-3"
+        className="absolute top-20 left-6 z-50 flex items-center gap-3"
       >
         <motion.button
           whileHover={{ scale: 1.02 }}
@@ -291,7 +291,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
       animate="visible"
       exit="exit"
       variants={containerVariants}
-      className="absolute top-6 left-6 z-50"
+      className="absolute top-20 left-6 z-50"
     >
       {/* Main Toolbar Button */}
       <div className="flex items-center gap-3">

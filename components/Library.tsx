@@ -144,7 +144,7 @@ export default function Library({
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="absolute top-6 left-6 flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold uppercase tracking-[0.4em] text-white/85 backdrop-blur transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+          className="absolute top-24 right-6 sm:right-auto sm:top-6 sm:left-6 flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold uppercase tracking-[0.4em] text-white/85 backdrop-blur transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
         >
           <CircuitBoard className="w-4 h-4" />
           <span className="text-xs">Library</span>
@@ -167,7 +167,7 @@ export default function Library({
             )}
           </AnimatePresence>
 
-          <div className="relative w-full max-w-4xl h-[80%] m-4 bg-[#353536] rounded-lg shadow-2xl border border-white/10 flex flex-col overflow-hidden">
+          <div className="relative w-full max-w-4xl h-[70%] sm:h-[80%] m-4 bg-[#353536] rounded-lg shadow-2xl border border-white/10 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 flex-shrink-0">
               <div className="flex items-center gap-3">

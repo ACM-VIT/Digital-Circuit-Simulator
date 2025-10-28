@@ -91,11 +91,40 @@ const circuits: CircuitInfo[] = [
   },
 ];
 
-export default function Library(): JSX.Element {
+interface Wire {
+  source: string;
+  target: string;
+}
+
+interface GateType {
+  id: string;
+  color: string;
+  name: string;
+  inputs?: string[];
+  outputs: { [key: string]: string };
+  circuit?: { gates: GateType[]; wires: Wire[] };
+}
+
+type LibraryProps = {
+  onAddCombinational: (gate: GateType) => void;
+};
+
+export default function Library({
+  onAddCombinational,
+}: LibraryProps): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleCircuitSelect = (circuitId: Circuits) => {
-    // TODO: Handle circuit selection and generation
+  const handleCircuitSelect = (circuit: CircuitInfo) => {
+    const gate: GateType = {
+      id: circuit.id.toString(), // or generate uuid
+      name: circuit.name,
+      color: circuit.color,
+      inputs: circuit.inputs,
+      outputs: circuit.outputs,
+    };
+
+    // call parent to add the circuit to the toolbar dynamically
+    onAddCombinational(gate);
 
     setIsOpen(false);
   };
@@ -137,7 +166,7 @@ export default function Library(): JSX.Element {
                 {circuits.map((circuit) => (
                   <button
                     key={circuit.id}
-                    onClick={() => handleCircuitSelect(circuit.id)}
+                    onClick={() => handleCircuitSelect(circuit)}
                     className="group relative p-6 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg transition-all text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                   >
                     <div className="flex items-start justify-between mb-3">

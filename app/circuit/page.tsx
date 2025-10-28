@@ -152,6 +152,20 @@ function CircuitMaker() {
   const [currentCircuitId, setCurrentCircuitId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
+  // replace usage of GateList prop with this:
+  const [combinationalGates, setCombinationalGates] = useState<GateType[]>(
+    // initialize from existing GateList constant
+    GateList
+  );
+
+  const addCombinationalCircuit = (gate: GateType) => {
+    setCombinationalGates((prev) => {
+      // avoid duplicates by name (or use id)
+      if (prev.some((g) => g.name === gate.name)) return prev;
+      return [...prev, { ...gate, id: v4() }]; // give unique id for toolbar instance
+    });
+  };
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const circuitId = urlParams.get("load");
@@ -701,12 +715,13 @@ function CircuitMaker() {
         pendingNode={pendingNode}
         nextLabelIndex={nextLabelIndex}
         GateList={GateList}
+        combinationCircuits={combinationalGates}
         onTogglePalette={handleTogglePalette}
         onPaletteSelect={handlePaletteSelect}
         indexToLabel={indexToLabel}
       />
 
-      <Library />
+      <Library onAddCombinational={addCombinationalCircuit} />
 
       {/* User Actions */}
       {isLoaded && user && (

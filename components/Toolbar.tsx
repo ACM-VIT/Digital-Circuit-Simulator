@@ -33,6 +33,7 @@ interface ToolbarProps {
   pendingNode: { type: string; gate?: GateType } | null;
   nextLabelIndex: number;
   GateList: GateType[];
+  combinationCircuits: GateType[];
   onTogglePalette: () => void;
   onPaletteSelect: (type: string, gate?: GateType) => void;
   indexToLabel: (index: number) => string;
@@ -341,20 +342,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
                   whileHover={{ scale: isCircuitCategory ? 1 : 1.02 }}
                   whileTap={{ scale: isCircuitCategory ? 1 : 0.98 }}
                   type="button"
-                  onClick={() =>
-                    !isCircuitCategory && handleCategoryClick(category)
-                  }
-                  onMouseEnter={() =>
-                    !isCircuitCategory && handleCategoryHover(category)
-                  }
+                  onClick={() => handleCategoryClick(category)}
+                  onMouseEnter={() => handleCategoryHover(category)}
                   className={`w-full rounded-lg border px-4 py-3 text-left font-semibold transition-all ${
                     activeCategory === category
                       ? "bg-black/60 ring-2 ring-amber-300 border-amber-300/30"
                       : "border-white/10 bg-black/40 hover:bg-black/60"
-                  } ${
-                    isCircuitCategory ? "opacity-60 cursor-not-allowed" : ""
-                  }`}
-                  disabled={isCircuitCategory}
+                  } `}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -364,15 +358,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {isCircuitCategory && (
-                        <motion.span
-                          initial={{ opacity: 0, scale: 0 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded-full"
-                        >
-                          Soon
-                        </motion.span>
-                      )}
                       <motion.span
                         animate={{
                           rotate: activeCategory === category ? 180 : 0,
@@ -412,39 +397,26 @@ const Toolbar: React.FC<ToolbarProps> = ({
                               animate="visible"
                               variants={itemVariants}
                               whileHover={{
-                                scale: isCircuitItem ? 1 : 1.02,
-                                x: isCircuitItem ? 0 : 4,
+                                scale: 1.02,
+                                x: 4,
                               }}
-                              whileTap={{ scale: isCircuitItem ? 1 : 0.98 }}
+                              whileTap={{ scale: 0.98 }}
                               type="button"
                               onClick={() =>
-                                !isCircuitItem &&
                                 handleItemSelect(category, item.name)
                               }
-                              className={`w-full rounded-md px-3 py-2 text-left text-sm transition-all flex items-center justify-between ${
-                                isCircuitItem
-                                  ? "opacity-50 cursor-not-allowed"
-                                  : "hover:bg-white/10"
-                              } ${
+                              className={`w-full rounded-md px-3 py-2 text-left text-sm transition-all flex items-center justify-between hover:bg-white/10 ${
                                 isActive
                                   ? "bg-amber-500/20 ring-1 ring-amber-300"
                                   : "bg-transparent"
                               }`}
-                              disabled={isCircuitItem}
                             >
                               <div className="flex items-center gap-3">
                                 <ItemIcon className="w-4 h-4" />
-                                <span
-                                  className={isCircuitItem ? "opacity-70" : ""}
-                                >
-                                  {item.name}
-                                </span>
+                                <span>{item.name}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                {isCircuitItem && (
-                                  <Zap className="w-3 h-3 text-amber-400/70" />
-                                )}
-                                {!isCircuitItem && item.color && (
+                                {item.color && (
                                   <div
                                     className="w-3 h-3 rounded-full border border-white/20"
                                     style={{ backgroundColor: item.color }}

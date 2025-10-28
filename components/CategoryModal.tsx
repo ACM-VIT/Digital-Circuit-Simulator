@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, FolderPlus, Palette } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -49,7 +50,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
       // Don't close here - let parent handle it
     } catch (error) {
       console.error('CategoryModal: Error saving category:', error);
-      alert('Failed to create category. Please try again.');
+      toast.error('Failed to create category. Please try again.');
     } finally {
       setLoading(false);
     }

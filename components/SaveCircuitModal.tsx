@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Tag, FolderOpen, Plus } from 'lucide-react';
 import CategoryModal from './CategoryModal';
+import toast from 'react-hot-toast';
 
 interface SaveCircuitModalProps {
   isOpen: boolean;
@@ -78,7 +79,10 @@ const SaveCircuitModal: React.FC<SaveCircuitModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) return;
+    if (!formData.name.trim()) {
+      toast.error('Please enter a circuit name');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -87,6 +91,7 @@ const SaveCircuitModal: React.FC<SaveCircuitModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Error saving circuit:', error);
+      // Error toast is already shown in handleSaveCircuit
     } finally {
       setLoading(false);
     }
@@ -137,14 +142,15 @@ const SaveCircuitModal: React.FC<SaveCircuitModalProps> = ({
         
         // Close the modal
         setShowCategoryModal(false);
+        toast.success('Category created successfully!');
       } else {
         const error = await response.json();
         console.error('Failed to create category:', error);
-        alert('Failed to create category: ' + (error.error || 'Unknown error'));
+        toast.error('Failed to create category: ' + (error.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error creating category:', error);
-      alert('Error creating category. Check console for details.');
+      toast.error('Error creating category. Please try again.');
       throw error;
     }
   };

@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+// import { useUser } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { 
   CircuitBoard, 
   Plus, 
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import CategoryModal from '@/components/CategoryModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 interface Circuit {
   id: string;
@@ -45,7 +47,11 @@ interface Label {
 }
 
 export default function Dashboard() {
-  const { user, isLoaded } = useUser();
+  // Temporarily disabled Clerk
+  // const { user, isLoaded } = useUser();
+  const user = { id: 'temp-user', firstName: 'Test' }; // Mock user for testing
+  const isLoaded = true;
+  
   const [circuits, setCircuits] = useState<Circuit[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
@@ -55,6 +61,7 @@ export default function Dashboard() {
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const [showCreateLabel, setShowCreateLabel] = useState(false);
   const [movingCircuitId, setMovingCircuitId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'circuit' | 'category', id: string } | null>(null);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -93,8 +100,6 @@ export default function Dashboard() {
   };
 
   const deleteCircuit = async (circuitId: string) => {
-    if (!confirm('Are you sure you want to delete this circuit?')) return;
-
     try {
       const response = await fetch(`/api/circuits/${circuitId}`, {
         method: 'DELETE'
@@ -102,9 +107,13 @@ export default function Dashboard() {
 
       if (response.ok) {
         setCircuits(prev => prev.filter(circuit => circuit.id !== circuitId));
+        toast.success('Circuit deleted successfully');
+      } else {
+        toast.error('Failed to delete circuit');
       }
     } catch (error) {
       console.error('Error deleting circuit:', error);
+      toast.error('Error deleting circuit');
     }
   };
 
@@ -120,16 +129,18 @@ export default function Dashboard() {
         const newCategory = await response.json();
         setCategories(prev => [...prev, newCategory]);
         setShowCreateCategory(false);
+        toast.success('Category created successfully!');
+      } else {
+        toast.error('Failed to create category');
       }
     } catch (error) {
       console.error('Error creating category:', error);
+      toast.error('Error creating category');
       throw error;
     }
   };
 
   const deleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category? Circuits in this category will not be deleted.')) return;
-
     try {
       const response = await fetch(`/api/categories/${categoryId}`, {
         method: 'DELETE'
@@ -142,9 +153,13 @@ export default function Dashboard() {
         }
         // Reload circuits to update their category associations
         loadData();
+        toast.success('Category deleted successfully');
+      } else {
+        toast.error('Failed to delete category');
       }
     } catch (error) {
       console.error('Error deleting category:', error);
+      toast.error('Error deleting category');
     }
   };
 
@@ -363,7 +378,7 @@ export default function Dashboard() {
                     {circuits.filter(c => c.categories.some(cat => cat.category.name === category.name)).length} circuits
                   </p>
                   <button
-                    onClick={() => deleteCategory(category.id)}
+                    onClick={() => setConfirmDelete({ type: 'category', id: category.id })}
                     className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded transition-all"
                     title="Delete category"
                   >
@@ -422,7 +437,7 @@ export default function Dashboard() {
                       </button>
                     </Link>
                     <button
-                      onClick={() => deleteCircuit(circuit.id)}
+                      onClick={() => setConfirmDelete({ type: 'circuit', id: circuit.id })}
                       className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
                       title="Delete circuit"
                     >
@@ -538,6 +553,28 @@ export default function Dashboard() {
         onClose={() => setShowCreateCategory(false)}
         onSave={createCategory}
         title="Create Category"
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete) {
+            if (confirmDelete.type === 'circuit') {
+              deleteCircuit(confirmDelete.id);
+            } else {
+              deleteCategory(confirmDelete.id);
+            }
+            setConfirmDelete(null);
+          }
+        }}
+        title={confirmDelete?.type === 'circuit' ? 'Delete Circuit' : 'Delete Category'}
+        message={
+          confirmDelete?.type === 'circuit'
+            ? 'Are you sure you want to delete this circuit? This action cannot be undone.'
+            : 'Are you sure you want to delete this category? Circuits in this category will not be deleted.'
+        }
       />
     </div>
   );

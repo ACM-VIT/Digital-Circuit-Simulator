@@ -5,17 +5,20 @@ import D from "@/public/logic-gate-or-svgrepo-com.svg";
 import cir from "@/public/8bvaKz01 (1).svg";
 import Link from "next/link";
 import { LoaderButton } from "@/components/LoaderButton";
-import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
+// import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
 import { User, LogIn } from 'lucide-react';
-import UserSync from '@/components/UserSync';
+// import UserSync from '@/components/UserSync';
 
 export default function Home() {
-  const { user, isLoaded } = useUser();
+  // Temporarily disabled Clerk
+  // const { user, isLoaded } = useUser();
+  const user = null; // Mock user for testing
+  const isLoaded = true;
 
   return (
     <div className="min-h-screen bg-[#1b1c1d] flex flex-col relative overflow-hidden">
       {/* Auto-sync user with database when authenticated */}
-      <UserSync />
+      {/* <UserSync /> */}
       {/* Header with Auth */}
       <div className="absolute top-6 right-6 z-10">
         {isLoaded && user ? (
@@ -32,11 +35,12 @@ export default function Home() {
                 <span className="text-sm font-medium">Simulator</span>
               </button>
             </Link>
-            <UserButton afterSignOutUrl="/" />
+            {/* <UserButton afterSignOutUrl="/" /> */}
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <SignInButton mode="modal">
+            {/* Temporarily disabled Clerk auth buttons */}
+            {/* <SignInButton mode="modal">
               <button className="flex items-center gap-2 px-4 py-2 border border-white/20 rounded-full text-white/90 hover:bg-white/10 transition-colors">
                 <LogIn className="w-4 h-4" />
                 <span className="text-sm font-medium">Sign In</span>
@@ -47,7 +51,13 @@ export default function Home() {
                 <User className="w-4 h-4" />
                 <span className="text-sm font-medium">Sign Up</span>
               </button>
-            </SignUpButton>
+            </SignUpButton> */}
+            <Link href="/circuit">
+              <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors">
+                <User className="w-4 h-4" />
+                <span className="text-sm font-medium">Try Now</span>
+              </button>
+            </Link>
           </div>
         )}
       </div>

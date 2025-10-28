@@ -22,6 +22,7 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 import { v4 } from "uuid";
+import toast from 'react-hot-toast';
 
 import "reactflow/dist/style.css";
 import Input from "@/app/circuit/components/nodes/input";
@@ -33,9 +34,9 @@ import SaveCircuitModal, {
 } from "@/components/SaveCircuitModal";
 import CircuitLibrary from "@/components/CircuitLibrary";
 import ConfirmationModal from "@/components/ConfirmationModal";
-import { useUser } from "@clerk/nextjs";
+// import { useUser } from "@clerk/nextjs";
 import { Save, FolderOpen, User, Plus } from "lucide-react";
-import UserSync from "@/components/UserSync";
+// import UserSync from "@/components/UserSync";
 
 const indexToLabel = (index: number): string => {
   let result = "";
@@ -142,7 +143,11 @@ function CircuitMaker() {
     null
   );
 
-  const { user, isLoaded } = useUser();
+  // Temporarily disabled Clerk
+  // const { user, isLoaded } = useUser();
+  const user = { id: 'temp-user', firstName: 'Test' }; // Mock user for testing
+  const isLoaded = true;
+  
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -189,14 +194,14 @@ function CircuitMaker() {
         const circuit = await response.json();
         handleLoadCircuit(circuit);
       } else if (response.status === 404) {
-        alert("Circuit not found or you don't have access to it.");
+        toast.error("Circuit not found or you don't have access to it.");
       } else if (response.status === 401) {
-        alert("Please sign in to access this circuit.");
+        toast.error("Please sign in to access this circuit.");
       } else {
-        alert("Error loading circuit. Please try again.");
+        toast.error("Error loading circuit. Please try again.");
       }
     } catch (error) {
-      alert("Network error loading circuit. Please check your connection.");
+      toast.error("Network error loading circuit. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -478,9 +483,12 @@ function CircuitMaker() {
         throw new Error("Failed to save circuit");
       }
 
+      const savedCircuit = await response.json();
+      toast.success("Circuit saved successfully!");
       console.log("Circuit saved successfully");
     } catch (error) {
       console.error("Error saving circuit:", error);
+      toast.error("Failed to save circuit. Please try again.");
       throw error;
     } finally {
       setSaving(false);
@@ -564,7 +572,7 @@ function CircuitMaker() {
 
   return (
     <ReactFlowProvider>
-      <UserSync />
+      {/* <UserSync /> */}
       <div className="h-screen w-screen" ref={reactFlowWrapper}>
         {pendingNode && mousePos && (
           <div
@@ -726,7 +734,7 @@ function CircuitMaker() {
           <div className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-full">
             <User className="w-4 h-4 text-white/70" />
             <span className="text-sm text-white/90">
-              {user.firstName || user.emailAddresses[0]?.emailAddress}
+              {user.firstName || 'Test User'}
             </span>
           </div>
         </div>

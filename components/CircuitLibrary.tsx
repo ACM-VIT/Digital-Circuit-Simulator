@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { 
   CircuitBoard, 
   Clock, 
@@ -19,6 +20,7 @@ import {
   FolderPlus
 } from 'lucide-react';
 import CategoryModal from './CategoryModal';
+import ConfirmationModal from './ConfirmationModal';
 
 interface Circuit {
   id: string;
@@ -53,6 +55,7 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
   const [copiedCircuitId, setCopiedCircuitId] = useState<string | null>(null);
   const [movingCircuitId, setMovingCircuitId] = useState<string | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -89,8 +92,6 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
   };
 
   const deleteCircuit = async (circuitId: string) => {
-    if (!confirm('Are you sure you want to delete this circuit?')) return;
-
     try {
       const response = await fetch(`/api/circuits/${circuitId}`, {
         method: 'DELETE'
@@ -98,9 +99,13 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
 
       if (response.ok) {
         setCircuits(prev => prev.filter(circuit => circuit.id !== circuitId));
+        toast.success('Circuit deleted successfully');
+      } else {
+        toast.error('Failed to delete circuit');
       }
     } catch (error) {
       console.error('Error deleting circuit:', error);
+      toast.error('Error deleting circuit');
     }
   };
 
@@ -116,9 +121,13 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
         const updatedCircuit = await response.json();
         setCircuits(prev => prev.map(c => c.id === circuitId ? updatedCircuit : c));
         setMovingCircuitId(null);
+        toast.success('Circuit moved successfully!');
+      } else {
+        toast.error('Failed to move circuit');
       }
     } catch (error) {
       console.error('Error moving circuit:', error);
+      toast.error('Error moving circuit');
     }
   };
 
@@ -134,9 +143,13 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
         const newCategory = await response.json();
         setCategories(prev => [...prev, newCategory]);
         setShowCategoryModal(false);
+        toast.success('Category created successfully!');
+      } else {
+        toast.error('Failed to create category');
       }
     } catch (error) {
       console.error('Error creating category:', error);
+      toast.error('Error creating category');
       throw error;
     }
   };
@@ -307,7 +320,7 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
                           )}
                         </button>
                         <button
-                          onClick={() => deleteCircuit(circuit.id)}
+                          onClick={() => setConfirmDelete(circuit.id)}
                           className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
                           title="Delete circuit"
                         >
@@ -438,6 +451,20 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
         onClose={() => setShowCategoryModal(false)}
         onSave={createCategory}
         title="Create Category"
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete) {
+            deleteCircuit(confirmDelete);
+            setConfirmDelete(null);
+          }
+        }}
+        title="Delete Circuit"
+        message="Are you sure you want to delete this circuit? This action cannot be undone."
       />
     </AnimatePresence>
   );

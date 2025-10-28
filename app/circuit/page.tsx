@@ -38,6 +38,7 @@ import { useUser } from "@clerk/nextjs";
 import { Save, FolderOpen, User, Plus } from "lucide-react";
 import UserSync from "@/components/UserSync";
 import Link from "next/link";
+import Loader from "@/components/Loader";
 
 const indexToLabel = (index: number): string => {
   let result = "";
@@ -149,6 +150,7 @@ function CircuitMaker() {
   const [showLibrary, setShowLibrary] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingPage, setLoadingPage] = useState(false);
   const [currentCircuitId, setCurrentCircuitId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -584,7 +586,10 @@ function CircuitMaker() {
 
   return (
     <ReactFlowProvider>
+      {loadingPage && <Loader />}
+
       <UserSync />
+
       <div className="h-screen w-screen" ref={reactFlowWrapper}>
         {pendingNode && mousePos && (
           <div
@@ -747,7 +752,12 @@ function CircuitMaker() {
           </button>
 
           <Link href="/dashboard">
-            <button className="flex items-center gap-2 px-3 py-2 bg-white/10 border-white/20  hover:bg-white/20 rounded-full">
+            <button
+              onClick={() => {
+                setLoadingPage(true);
+              }}
+              className="flex items-center gap-2 px-3 py-2 bg-white/10 border-white/20  hover:bg-white/20 rounded-full"
+            >
               <User className="w-4 h-4 text-white/70" />
               <span className="text-sm text-white/90">
                 {user.firstName || user.emailAddresses[0]?.emailAddress}

@@ -20,6 +20,7 @@ import {
   Move
 } from 'lucide-react';
 import Link from 'next/link';
+import Loader from '@/components/Loader';
 import CategoryModal from '@/components/CategoryModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 
@@ -56,6 +57,7 @@ export default function Dashboard() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPage, setLoadingPage] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showCreateCategory, setShowCreateCategory] = useState(false);
@@ -175,9 +177,13 @@ export default function Dashboard() {
         const updatedCircuit = await response.json();
         setCircuits(prev => prev.map(c => c.id === circuitId ? updatedCircuit : c));
         setMovingCircuitId(null);
+        toast.success('Circuit moved successfully!');
+      } else {
+        toast.error('Failed to move circuit');
       }
     } catch (error) {
       console.error('Error moving circuit:', error);
+      toast.error('Error moving circuit');
     }
   };
 
@@ -240,6 +246,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#1b1c1d]">
+      {loadingPage && <Loader />}
       {/* Header */}
       <div className="border-b border-white/10 bg-[#141515]">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -247,7 +254,12 @@ export default function Dashboard() {
             <div className="flex items-center gap-4">
               <Link href="/circuit" className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300">
                 <CircuitBoard className="w-6 h-6" />
-                <span className="text-xl font-bold">Circuit Simulator</span>
+                <span 
+                  onClick={() => setLoadingPage(true)}
+                  className="text-xl font-bold"
+                >
+                  Circuit Simulator
+                </span>
               </Link>
               <div className="h-6 w-px bg-white/20" />
               <h1 className="text-xl font-semibold text-white">Dashboard</h1>
@@ -255,7 +267,10 @@ export default function Dashboard() {
             
             <div className="flex items-center gap-4">
               <Link href="/circuit">
-                <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-emerald-300 hover:bg-emerald-500/30 transition-colors">
+                <button 
+                  onClick={() => setLoadingPage(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-emerald-300 hover:bg-emerald-500/30 transition-colors"
+                >
                   <Plus className="w-4 h-4" />
                   New Circuit
                 </button>
@@ -406,7 +421,10 @@ export default function Dashboard() {
               }
             </p>
             <Link href="/circuit">
-              <button className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-black font-semibold rounded-lg hover:bg-emerald-400 transition-colors mx-auto">
+              <button 
+                onClick={() => setLoadingPage(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-black font-semibold rounded-lg hover:bg-emerald-400 transition-colors mx-auto"
+              >
                 <Plus className="w-4 h-4" />
                 Create Circuit
               </button>
@@ -432,7 +450,11 @@ export default function Dashboard() {
                       <Move className="w-4 h-4 text-blue-400" />
                     </button>
                     <Link href={`/circuit?load=${circuit.id}`}>
-                      <button className="p-2 hover:bg-emerald-500/20 rounded-lg transition-colors" title="Load circuit">
+                      <button 
+                        className="p-2 hover:bg-emerald-500/20 rounded-lg transition-colors" 
+                        title="Load circuit"
+                        onClick={() => setLoadingPage(true)}
+                      >
                         <Play className="w-4 h-4 text-emerald-400" />
                       </button>
                     </Link>

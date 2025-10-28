@@ -4,19 +4,22 @@ import Image from "next/image";
 import D from "@/public/logic-gate-or-svgrepo-com.svg";
 import cir from "@/public/8bvaKz01 (1).svg";
 import Link from "next/link";
-import { LoaderButton } from "@/components/LoaderButton";
-// import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
 import { User, LogIn } from 'lucide-react';
+// import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
 // import UserSync from '@/components/UserSync';
+import { useState } from "react";
+import Loader from "@/components/Loader";
 
 export default function Home() {
   // Temporarily disabled Clerk
   // const { user, isLoaded } = useUser();
   const user = null; // Mock user for testing
   const isLoaded = true;
+  const [loading, setLoading] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#1b1c1d] flex flex-col relative overflow-hidden">
+      {loading && <Loader />}
       {/* Auto-sync user with database when authenticated */}
       {/* <UserSync /> */}
       {/* Header with Auth */}
@@ -24,13 +27,19 @@ export default function Home() {
         {isLoaded && user ? (
           <div className="flex items-center gap-3">
             <Link href="/dashboard">
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-300 hover:bg-blue-500/30 transition-colors">
+              <button 
+                onClick={() => setLoading(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-300 hover:bg-blue-500/30 transition-colors"
+              >
                 <User className="w-4 h-4" />
                 <span className="text-sm font-medium">Dashboard</span>
               </button>
             </Link>
             <Link href="/circuit">
-              <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors">
+              <button 
+                onClick={() => setLoading(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors"
+              >
                 <User className="w-4 h-4" />
                 <span className="text-sm font-medium">Simulator</span>
               </button>
@@ -53,7 +62,10 @@ export default function Home() {
               </button>
             </SignUpButton> */}
             <Link href="/circuit">
-              <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors">
+              <button 
+                onClick={() => setLoading(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors"
+              >
                 <User className="w-4 h-4" />
                 <span className="text-sm font-medium">Try Now</span>
               </button>
@@ -95,7 +107,12 @@ export default function Home() {
         </div>
 
         <Link href="/circuit" className="z-10">
-          <LoaderButton label="Try it Out!" />
+          <button
+            onClick={() => setLoading(true)}
+            className="mt-10 px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 text-black font-bold text-2xl shadow-[0_0_20px_rgba(0,255,157,0.3)] hover:shadow-[0_0_40px_rgba(0,255,157,0.6)] hover:scale-105 transition-all duration-300"
+          >
+            Try it Out!
+          </button>
         </Link>
       </div>
 

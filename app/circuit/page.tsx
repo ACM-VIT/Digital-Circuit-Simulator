@@ -59,6 +59,7 @@ interface GateType {
   inputs?: string[];
   outputs: { [key: string]: string };
   circuit?: { gates: GateType[]; wires: Wire[] };
+  isCombinational?: boolean;
 }
 
 interface Wire {
@@ -160,7 +161,7 @@ function CircuitMaker() {
     setCombinationalGates((prev) => {
       // avoid duplicates by name (or use id)
       if (prev.some((g) => g.name === gate.name)) return prev;
-      return [...prev, { ...gate, id: v4() }]; // give unique id for toolbar instance
+      return [...prev, { ...gate, id: v4(), isCombinational: true }]; // give unique id for toolbar instance
     });
   };
 

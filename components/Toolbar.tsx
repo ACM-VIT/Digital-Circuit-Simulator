@@ -395,49 +395,59 @@ const Toolbar: React.FC<ToolbarProps> = ({
                           !isMobile && setActiveCategory(null)
                         }
                       >
-                        <div className="space-y-1">
-                          {config.items.map((item, itemIndex) => {
-                            const ItemIcon = item.icon;
-                            const isActive = isItemActive(category, item.name);
+                        {category === "Combinational Circuits" &&
+                        config.items.length === 0 ? (
+                          <div className="text-gray-400 italic px-3 py-2 select-none">
+                            Add from library
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            {config.items.map((item, itemIndex) => {
+                              const ItemIcon = item.icon;
+                              const isActive = isItemActive(
+                                category,
+                                item.name
+                              );
 
-                            return (
-                              <motion.button
-                                key={item.name}
-                                custom={itemIndex}
-                                initial="hidden"
-                                animate="visible"
-                                variants={itemVariants}
-                                whileHover={{
-                                  scale: 1.02,
-                                  x: 4,
-                                }}
-                                whileTap={{ scale: 0.98 }}
-                                type="button"
-                                onClick={() =>
-                                  handleItemSelect(category, item.name)
-                                }
-                                className={`w-full rounded-md px-3 py-2 text-left text-sm transition-all flex items-center justify-between hover:bg-white/10 ${
-                                  isActive
-                                    ? "bg-amber-500/20 ring-1 ring-amber-300"
-                                    : "bg-transparent"
-                                }`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <ItemIcon className="w-4 h-4" />
-                                  <span>{item.name}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {item.color && (
-                                    <div
-                                      className="w-3 h-3 rounded-full border border-white/20"
-                                      style={{ backgroundColor: item.color }}
-                                    />
-                                  )}
-                                </div>
-                              </motion.button>
-                            );
-                          })}
-                        </div>
+                              return (
+                                <motion.button
+                                  key={item.name}
+                                  custom={itemIndex}
+                                  initial="hidden"
+                                  animate="visible"
+                                  variants={itemVariants}
+                                  whileHover={{
+                                    scale: 1.02,
+                                    x: 4,
+                                  }}
+                                  whileTap={{ scale: 0.98 }}
+                                  type="button"
+                                  onClick={() =>
+                                    handleItemSelect(category, item.name)
+                                  }
+                                  className={`w-full rounded-md px-3 py-2 text-left text-sm transition-all flex items-center justify-between hover:bg-white/10 ${
+                                    isActive
+                                      ? "bg-amber-500/20 ring-1 ring-amber-300"
+                                      : "bg-transparent"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <ItemIcon className="w-4 h-4" />
+                                    <span>{item.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {item.color && (
+                                      <div
+                                        className="w-3 h-3 rounded-full border border-white/20"
+                                        style={{ backgroundColor: item.color }}
+                                      />
+                                    )}
+                                  </div>
+                                </motion.button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>

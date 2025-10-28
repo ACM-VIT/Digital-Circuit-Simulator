@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { CircuitBoard, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 enum Circuits {
   HalfAdder,
@@ -113,6 +114,8 @@ export default function Library({
   onAddCombinational,
 }: LibraryProps): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
+  const [addedCircuit, setAddedCircuit] = useState<string | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleCircuitSelect = (circuit: CircuitInfo) => {
     const gate: GateType = {
@@ -125,8 +128,15 @@ export default function Library({
 
     // add the circuit to the toolbar dynamically
     onAddCombinational(gate);
+    setAddedCircuit(circuit.name);
 
-    setIsOpen(false);
+    // Clear previous timeout (so it resets each time you click)
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    // Set a new timeout
+    timeoutRef.current = setTimeout(() => {
+      setAddedCircuit(null);
+    }, 2000);
   };
 
   return (
@@ -143,6 +153,20 @@ export default function Library({
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <AnimatePresence>
+            {addedCircuit && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="fixed top-5 bg-emerald-500 text-white px-4 py-2 rounded-md shadow-lg z-50"
+              >
+                Added: {addedCircuit}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="relative w-full max-w-4xl h-[80%] m-4 bg-[#353536] rounded-lg shadow-2xl border border-white/10 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 flex-shrink-0">
@@ -177,6 +201,10 @@ export default function Library({
                         <CircuitBoard className="w-5 h-5 text-white" />
                       </div>
                     </div>
+                    <span className="absolute top-2 right-3 text-emerald-400 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                      Add to toolbar
+                    </span>
+
                     <h3 className="text-lg font-semibold text-white/90 mb-2">
                       {circuit.name}
                     </h3>

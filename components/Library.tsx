@@ -3,8 +3,102 @@
 import { useState } from "react";
 import { CircuitBoard, X } from "lucide-react";
 
-export default function Library() {
+enum Circuits {
+  HalfAdder,
+  FullAdder,
+  HalfSubtractor,
+  FullSubtractor,
+  Mux,
+  Demux,
+}
+
+interface CircuitInfo {
+  id: Circuits;
+  name: string;
+  description: string;
+  color: string;
+  inputs?: string[];
+  outputs: { [key: string]: string };
+}
+
+const circuits: CircuitInfo[] = [
+  {
+    id: Circuits.HalfAdder,
+    name: "Half Adder",
+    description: "Adds two single binary digits and outputs sum and carry",
+    color: "#267AB2",
+    inputs: ["a", "b"],
+    outputs: {
+      sum: "a ^ b", // XOR
+      carry: "a && b", // AND
+    },
+  },
+  {
+    id: Circuits.FullAdder,
+    name: "Full Adder",
+    description: "Adds three binary digits with sum and carry outputs",
+    color: "#4b90beff",
+    inputs: ["a", "b", "cin"],
+    outputs: {
+      sum: "a ^ b ^ cin", // XOR of all
+      carry: "(a && b) || (b && cin) || (a && cin)", // Majority function
+    },
+  },
+  {
+    id: Circuits.HalfSubtractor,
+    name: "Half Subtractor",
+    description:
+      "Subtracts two binary digits and outputs difference and borrow",
+    color: "#1a8c3cff",
+    inputs: ["a", "b"],
+    outputs: {
+      difference: "a ^ b", // XOR
+      borrow: "!a && b", // NOT a AND b
+    },
+  },
+  {
+    id: Circuits.FullSubtractor,
+    name: "Full Subtractor",
+    description: "Subtracts three binary digits with difference and borrow",
+    color: "#34a155ff",
+    inputs: ["a", "b", "bin"],
+    outputs: {
+      difference: "a ^ b ^ bin", // XOR of all
+      borrow: "(!a && b) || (b && bin) || (!a && bin)", // Borrow logic
+    },
+  },
+  {
+    id: Circuits.Mux,
+    name: "Multiplexer (2:1)",
+    description:
+      "Selects one of many inputs and forwards it to a single output",
+    color: "#A65B1F",
+    inputs: ["i0", "i1", "s"],
+    outputs: {
+      out: "(i0 && !s) || (i1 && s)", // 2:1 MUX logic
+    },
+  },
+  {
+    id: Circuits.Demux,
+    name: "Demultiplexer (1:2)",
+    description: "Takes one input and routes it to one of many outputs",
+    color: "#c2773aff",
+    inputs: ["d", "s"],
+    outputs: {
+      y0: "d && !s", // When select = 0
+      y1: "d && s", // When select = 1
+    },
+  },
+];
+
+export default function Library(): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleCircuitSelect = (circuitId: Circuits) => {
+    // TODO: Handle circuit selection and generation
+
+    setIsOpen(false);
+  };
 
   return (
     <>
@@ -19,10 +113,10 @@ export default function Library() {
       )}
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center ">
-          <div className="relative w-full max-w-4xl max-h-[80vh] m-4 bg-[#353536] rounded-lg shadow-2xl border border-white/10 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-4xl h-[80%] m-4 bg-[#353536] rounded-lg shadow-2xl border border-white/10 flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <CircuitBoard className="w-5 h-5 text-amber-400" />
                 <h2 className="text-xl font-semibold text-white/90 tracking-wide">
@@ -31,17 +125,38 @@ export default function Library() {
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 rounded-lg hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                className="p-2 rounded-full hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
               >
                 <X className="w-5 h-5 text-white/70" />
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-80px)]">
-              <p className="text-white/60 text-center">
-                Library content will go here
-              </p>
+            {/* Scrollable content */}
+            <div className="p-6 overflow-y-auto w-full flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {circuits.map((circuit) => (
+                  <button
+                    key={circuit.id}
+                    onClick={() => handleCircuitSelect(circuit.id)}
+                    className="group relative p-6 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg transition-all text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div
+                        className="p-2 rounded-lg"
+                        style={{ backgroundColor: circuit.color }}
+                      >
+                        <CircuitBoard className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-white/90 mb-2">
+                      {circuit.name}
+                    </h3>
+                    <p className="text-sm text-white/60">
+                      {circuit.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

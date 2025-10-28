@@ -75,9 +75,9 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const [circuitsRes, categoriesRes, labelsRes] = await Promise.all([
-        fetch('/api/circuits'),
-        fetch('/api/categories'),
-        fetch('/api/labels')
+        fetch("/api/circuits"),
+        fetch("/api/categories"),
+        fetch("/api/labels"),
       ]);
 
       if (circuitsRes.ok) {
@@ -95,7 +95,7 @@ export default function Dashboard() {
         setLabels(labelsData);
       }
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ export default function Dashboard() {
   const deleteCircuit = async (circuitId: string) => {
     try {
       const response = await fetch(`/api/circuits/${circuitId}`, {
-        method: 'DELETE'
+        method: "DELETE",
       });
 
       if (response.ok) {
@@ -129,7 +129,7 @@ export default function Dashboard() {
 
       if (response.ok) {
         const newCategory = await response.json();
-        setCategories(prev => [...prev, newCategory]);
+        setCategories((prev) => [...prev, newCategory]);
         setShowCreateCategory(false);
         toast.success('Category created successfully!');
       } else {
@@ -189,37 +189,39 @@ export default function Dashboard() {
 
   const createLabel = async (name: string, color: string) => {
     try {
-      const response = await fetch('/api/labels', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, color })
+      const response = await fetch("/api/labels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, color }),
       });
 
       if (response.ok) {
         const newLabel = await response.json();
-        setLabels(prev => [...prev, newLabel]);
+        setLabels((prev) => [...prev, newLabel]);
         setShowCreateLabel(false);
       }
     } catch (error) {
-      console.error('Error creating label:', error);
+      console.error("Error creating label:", error);
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
-  const filteredCircuits = circuits.filter(circuit => {
-    const matchesSearch = circuit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         circuit.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = selectedCategory === 'all' || 
-                           circuit.categories.some(cat => cat.category.name === selectedCategory);
-    
+  const filteredCircuits = circuits.filter((circuit) => {
+    const matchesSearch =
+      circuit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      circuit.description?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === "all" ||
+      circuit.categories.some((cat) => cat.category.name === selectedCategory);
+
     return matchesSearch && matchesCategory;
   });
 
@@ -235,7 +237,9 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-[#1b1c1d] flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Please sign in to access your dashboard</h1>
+          <h1 className="text-2xl font-bold text-white mb-4">
+            Please sign in to access your dashboard
+          </h1>
           <Link href="/" className="text-emerald-400 hover:text-emerald-300">
             Go to Home
           </Link>
@@ -252,7 +256,10 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link href="/circuit" className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300">
+              <Link
+                href="/circuit"
+                className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300"
+              >
                 <CircuitBoard className="w-6 h-6" />
                 <span 
                   onClick={() => setLoadingPage(true)}
@@ -264,7 +271,7 @@ export default function Dashboard() {
               <div className="h-6 w-px bg-white/20" />
               <h1 className="text-xl font-semibold text-white">Dashboard</h1>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <Link href="/circuit">
                 <button 
@@ -288,22 +295,26 @@ export default function Dashboard() {
             <div className="flex items-center gap-3">
               <CircuitBoard className="w-8 h-8 text-emerald-400" />
               <div>
-                <p className="text-2xl font-bold text-white">{circuits.length}</p>
+                <p className="text-2xl font-bold text-white">
+                  {circuits.length}
+                </p>
                 <p className="text-white/70 text-sm">Total Circuits</p>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-black/40 border border-white/10 rounded-xl p-6">
             <div className="flex items-center gap-3">
               <FolderOpen className="w-8 h-8 text-blue-400" />
               <div>
-                <p className="text-2xl font-bold text-white">{categories.length}</p>
+                <p className="text-2xl font-bold text-white">
+                  {categories.length}
+                </p>
                 <p className="text-white/70 text-sm">Categories</p>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-black/40 border border-white/10 rounded-xl p-6">
             <div className="flex items-center gap-3">
               <Tag className="w-8 h-8 text-purple-400" />
@@ -313,17 +324,21 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-black/40 border border-white/10 rounded-xl p-6">
             <div className="flex items-center gap-3">
               <Calendar className="w-8 h-8 text-orange-400" />
               <div>
                 <p className="text-2xl font-bold text-white">
-                  {circuits.filter(c => {
-                    const today = new Date();
-                    const circuitDate = new Date(c.updated_at);
-                    return circuitDate.toDateString() === today.toDateString();
-                  }).length}
+                  {
+                    circuits.filter((c) => {
+                      const today = new Date();
+                      const circuitDate = new Date(c.updated_at);
+                      return (
+                        circuitDate.toDateString() === today.toDateString()
+                      );
+                    }).length
+                  }
                 </p>
                 <p className="text-white/70 text-sm">Updated Today</p>
               </div>
@@ -351,7 +366,7 @@ export default function Dashboard() {
               className="px-4 py-3 bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="all">All Categories</option>
-              {categories.map(category => (
+              {categories.map((category) => (
                 <option key={category.id} value={category.name}>
                   {category.name}
                 </option>
@@ -413,12 +428,13 @@ export default function Dashboard() {
         ) : filteredCircuits.length === 0 ? (
           <div className="text-center py-12">
             <CircuitBoard className="w-16 h-16 text-white/20 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white/70 mb-2">No circuits found</h3>
+            <h3 className="text-lg font-medium text-white/70 mb-2">
+              No circuits found
+            </h3>
             <p className="text-white/50 mb-6">
-              {searchTerm || selectedCategory !== 'all' 
-                ? 'Try adjusting your search or filter' 
-                : 'Create your first circuit to get started'
-              }
+              {searchTerm || selectedCategory !== "all"
+                ? "Try adjusting your search or filter"
+                : "Create your first circuit to get started"}
             </p>
             <Link href="/circuit">
               <button 
@@ -440,7 +456,9 @@ export default function Dashboard() {
                 className="bg-black/40 border border-white/10 rounded-xl p-6 hover:bg-black/60 transition-colors group relative"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="font-semibold text-white truncate">{circuit.name}</h3>
+                  <h3 className="font-semibold text-white truncate">
+                    {circuit.name}
+                  </h3>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => setMovingCircuitId(movingCircuitId === circuit.id ? null : circuit.id)}
@@ -533,9 +551,9 @@ export default function Dashboard() {
                       <span
                         key={index}
                         className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs"
-                        style={{ 
+                        style={{
                           backgroundColor: `${cat.category.color}20`,
-                          color: cat.category.color
+                          color: cat.category.color,
                         }}
                       >
                         <FolderOpen className="w-3 h-3" />
@@ -552,9 +570,9 @@ export default function Dashboard() {
                       <span
                         key={index}
                         className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs"
-                        style={{ 
+                        style={{
                           backgroundColor: `${label.label.color}20`,
-                          color: label.label.color
+                          color: label.label.color,
                         }}
                       >
                         <Tag className="w-3 h-3" />

@@ -33,7 +33,7 @@ interface ToolbarProps {
   pendingNode: { type: string; gate?: GateType } | null;
   nextLabelIndex: number;
   GateList: GateType[];
-  combinationCircuits: GateType[];
+  combinationalCircuits: GateType[];
   onTogglePalette: () => void;
   onPaletteSelect: (type: string, gate?: GateType) => void;
   indexToLabel: (index: number) => string;
@@ -83,11 +83,7 @@ const toolbarConfig = {
   "Combinational Circuits": {
     type: "circuit",
     icon: Cpu,
-    items: [
-      { name: "Adder", icon: Plus, color: "#4A90E2" },
-      { name: "Multiplexer", icon: GitBranch, color: "#50E3C2" },
-      { name: "Demultiplexer", icon: GitBranch, color: "#B8E986" },
-    ],
+    items: [],
   },
 };
 
@@ -96,6 +92,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   pendingNode,
   nextLabelIndex,
   GateList,
+  combinationalCircuits,
   onTogglePalette,
   onPaletteSelect,
   indexToLabel,
@@ -103,6 +100,20 @@ const Toolbar: React.FC<ToolbarProps> = ({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
+
+  const dynamicToolbarConfig = {
+    "Logic Gates": toolbarConfig["Logic Gates"],
+    "Input / Output": toolbarConfig["Input / Output"],
+    "Combinational Circuits": {
+      type: "circuit",
+      icon: Cpu,
+      items: combinationalCircuits.map((circuit) => ({
+        name: circuit.name,
+        color: circuit.color,
+        icon: GitBranch,
+      })),
+    },
+  };
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -151,7 +162,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
   const handleItemSelect = (category: string, itemName: string) => {
     const categoryConfig =
-      toolbarConfig[category as keyof typeof toolbarConfig];
+      dynamicToolbarConfig[category as keyof typeof dynamicToolbarConfig];
 
     if (categoryConfig.type === "io") {
       const nodeType = itemName.toLowerCase() === "input" ? "ip" : "op";
@@ -165,10 +176,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
         onPaletteSelect("gate", gate);
       }
     } else if (categoryConfig.type === "circuit") {
-      // Combinational circuits are not implemented yet
-      console.log(
-        `Combinational circuit "${itemName}" selected - not implemented yet`
-      );
+      const circ = combinationalCircuits.find((g) => g.name === itemName);
+      if (circ) {
+        onPaletteSelect("circuit", circ);
+      }
       return;
     }
 
@@ -179,7 +190,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
   const getItemDetails = (category: string, itemName: string) => {
     const categoryConfig =
-      toolbarConfig[category as keyof typeof toolbarConfig];
+      dynamicToolbarConfig[category as keyof typeof dynamicToolbarConfig];
     const item = categoryConfig.items.find((item) => item.name === itemName);
     return item || null;
   };
@@ -326,113 +337,114 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
         {/* Categories */}
         <div className="space-y-2">
-          {Object.entries(toolbarConfig).map(([category, config], index) => {
-            const CategoryIcon = config.icon;
-            const isCircuitCategory = isCombinationalCircuit(category);
+          {Object.entries(dynamicToolbarConfig).map(
+            ([category, config], index) => {
+              const CategoryIcon = config.icon;
 
-            return (
-              <motion.div
-                key={category}
-                custom={index}
-                variants={itemVariants}
-                className="relative"
-              >
-                {/* Category Button */}
-                <motion.button
-                  whileHover={{ scale: isCircuitCategory ? 1 : 1.02 }}
-                  whileTap={{ scale: isCircuitCategory ? 1 : 0.98 }}
-                  type="button"
-                  onClick={() => handleCategoryClick(category)}
-                  onMouseEnter={() => handleCategoryHover(category)}
-                  className={`w-full rounded-lg border px-4 py-3 text-left font-semibold transition-all ${
-                    activeCategory === category
-                      ? "bg-black/60 ring-2 ring-amber-300 border-amber-300/30"
-                      : "border-white/10 bg-black/40 hover:bg-black/60"
-                  } `}
+              return (
+                <motion.div
+                  key={category}
+                  custom={index}
+                  variants={itemVariants}
+                  className="relative"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <CategoryIcon className="w-4 h-4" />
-                      <span className="text-sm uppercase tracking-[0.2em]">
-                        {category}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <motion.span
-                        animate={{
-                          rotate: activeCategory === category ? 180 : 0,
-                        }}
-                        transition={{ duration: 0.2 }}
-                        className="text-xs"
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </motion.span>
-                    </div>
-                  </div>
-                </motion.button>
-
-                {/* Sub-items Dropdown */}
-                <AnimatePresence>
-                  {activeCategory === category && (
-                    <motion.div
-                      variants={dropdownVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      className="absolute left-0 right-0 mt-1 rounded-lg border border-white/10 bg-[#1a1a1a] p-2 shadow-xl z-50 overflow-hidden"
-                      onMouseLeave={() => !isMobile && setActiveCategory(null)}
-                    >
-                      <div className="space-y-1">
-                        {config.items.map((item, itemIndex) => {
-                          const ItemIcon = item.icon;
-                          const isActive = isItemActive(category, item.name);
-                          const isCircuitItem =
-                            isCombinationalCircuit(category);
-
-                          return (
-                            <motion.button
-                              key={item.name}
-                              custom={itemIndex}
-                              initial="hidden"
-                              animate="visible"
-                              variants={itemVariants}
-                              whileHover={{
-                                scale: 1.02,
-                                x: 4,
-                              }}
-                              whileTap={{ scale: 0.98 }}
-                              type="button"
-                              onClick={() =>
-                                handleItemSelect(category, item.name)
-                              }
-                              className={`w-full rounded-md px-3 py-2 text-left text-sm transition-all flex items-center justify-between hover:bg-white/10 ${
-                                isActive
-                                  ? "bg-amber-500/20 ring-1 ring-amber-300"
-                                  : "bg-transparent"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <ItemIcon className="w-4 h-4" />
-                                <span>{item.name}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {item.color && (
-                                  <div
-                                    className="w-3 h-3 rounded-full border border-white/20"
-                                    style={{ backgroundColor: item.color }}
-                                  />
-                                )}
-                              </div>
-                            </motion.button>
-                          );
-                        })}
+                  {/* Category Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="button"
+                    onClick={() => handleCategoryClick(category)}
+                    onMouseEnter={() => handleCategoryHover(category)}
+                    className={`w-full rounded-lg border px-4 py-3 text-left font-semibold transition-all ${
+                      activeCategory === category
+                        ? "bg-black/60 ring-2 ring-amber-300 border-amber-300/30"
+                        : "border-white/10 bg-black/40 hover:bg-black/60"
+                    } `}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <CategoryIcon className="w-4 h-4" />
+                        <span className="text-sm uppercase tracking-[0.2em]">
+                          {category}
+                        </span>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            );
-          })}
+                      <div className="flex items-center gap-2">
+                        <motion.span
+                          animate={{
+                            rotate: activeCategory === category ? 180 : 0,
+                          }}
+                          transition={{ duration: 0.2 }}
+                          className="text-xs"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </motion.span>
+                      </div>
+                    </div>
+                  </motion.button>
+
+                  {/* Sub-items Dropdown */}
+                  <AnimatePresence>
+                    {activeCategory === category && (
+                      <motion.div
+                        variants={dropdownVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        className="absolute left-0 right-0 mt-1 rounded-lg border border-white/10 bg-[#1a1a1a] p-2 shadow-xl z-50 overflow-hidden"
+                        onMouseLeave={() =>
+                          !isMobile && setActiveCategory(null)
+                        }
+                      >
+                        <div className="space-y-1">
+                          {config.items.map((item, itemIndex) => {
+                            const ItemIcon = item.icon;
+                            const isActive = isItemActive(category, item.name);
+
+                            return (
+                              <motion.button
+                                key={item.name}
+                                custom={itemIndex}
+                                initial="hidden"
+                                animate="visible"
+                                variants={itemVariants}
+                                whileHover={{
+                                  scale: 1.02,
+                                  x: 4,
+                                }}
+                                whileTap={{ scale: 0.98 }}
+                                type="button"
+                                onClick={() =>
+                                  handleItemSelect(category, item.name)
+                                }
+                                className={`w-full rounded-md px-3 py-2 text-left text-sm transition-all flex items-center justify-between hover:bg-white/10 ${
+                                  isActive
+                                    ? "bg-amber-500/20 ring-1 ring-amber-300"
+                                    : "bg-transparent"
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <ItemIcon className="w-4 h-4" />
+                                  <span>{item.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {item.color && (
+                                    <div
+                                      className="w-3 h-3 rounded-full border border-white/20"
+                                      style={{ backgroundColor: item.color }}
+                                    />
+                                  )}
+                                </div>
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            }
+          )}
         </div>
 
         {/* Mobile Close Hint */}

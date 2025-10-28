@@ -123,7 +123,7 @@ export default function Library({
       outputs: circuit.outputs,
     };
 
-    // call parent to add the circuit to the toolbar dynamically
+    // add the circuit to the toolbar dynamically
     onAddCombinational(gate);
 
     setIsOpen(false);

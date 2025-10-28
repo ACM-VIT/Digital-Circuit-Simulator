@@ -152,11 +152,7 @@ function CircuitMaker() {
   const [currentCircuitId, setCurrentCircuitId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  // replace usage of GateList prop with this:
-  const [combinationalGates, setCombinationalGates] = useState<GateType[]>(
-    // initialize from existing GateList constant
-    GateList
-  );
+  const [combinationalGates, setCombinationalGates] = useState<GateType[]>([]);
 
   const addCombinationalCircuit = (gate: GateType) => {
     setCombinationalGates((prev) => {
@@ -715,7 +711,7 @@ function CircuitMaker() {
         pendingNode={pendingNode}
         nextLabelIndex={nextLabelIndex}
         GateList={GateList}
-        combinationCircuits={combinationalGates}
+        combinationalCircuits={combinationalGates}
         onTogglePalette={handleTogglePalette}
         onPaletteSelect={handlePaletteSelect}
         indexToLabel={indexToLabel}

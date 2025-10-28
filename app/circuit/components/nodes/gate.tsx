@@ -22,7 +22,7 @@ function Gate(props: NodeProps) {
 
     if (isCombinational) {
       const topPadding = 15;
-      const bottomPadding = 85;
+      const bottomPadding = 70;
       const spacing = (bottomPadding - topPadding) / (total - 1);
       return topPadding + index * spacing;
     } else {

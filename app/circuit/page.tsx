@@ -22,7 +22,7 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 import { v4 } from "uuid";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
 import "reactflow/dist/style.css";
 import Input from "@/app/circuit/components/nodes/input";
@@ -149,9 +149,9 @@ function CircuitMaker() {
 
   // Temporarily disabled Clerk
   // const { user, isLoaded } = useUser();
-  const user = { id: 'temp-user', firstName: 'Test' }; // Mock user for testing
+  const user = { id: "temp-user", firstName: "Test" }; // Mock user for testing
   const isLoaded = true;
-  
+
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -216,7 +216,9 @@ function CircuitMaker() {
         toast.error("Error loading circuit. Please try again.");
       }
     } catch (error) {
-      toast.error("Network error loading circuit. Please check your connection.");
+      toast.error(
+        "Network error loading circuit. Please check your connection."
+      );
     } finally {
       setLoading(false);
     }
@@ -505,8 +507,14 @@ function CircuitMaker() {
       if (!response.ok) {
         throw new Error("Failed to save circuit");
       }
-
       const savedCircuit = await response.json();
+
+      // If it's a new circuit, set the current circuit ID and update URL
+      if (!currentCircuitId && savedCircuit.id) {
+        setCurrentCircuitId(savedCircuit.id);
+        updateUrlWithCircuitId(savedCircuit.id);
+      }
+
       toast.success("Circuit saved successfully!");
       console.log("Circuit saved successfully");
     } catch (error) {
@@ -515,6 +523,60 @@ function CircuitMaker() {
       throw error;
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveButtonClick = async () => {
+    if (!user) return;
+
+    // If circuit already exists, update it directly without showing modal
+    if (currentCircuitId) {
+      setSaving(true);
+      try {
+        const nodesWithCurrentValues = nodes.map((node) => ({
+          ...node,
+          data: {
+            ...node.data,
+            value:
+              node.type === "ip"
+                ? inputValues[node.id]
+                : node.type === "op"
+                ? outputValues[node.id]
+                : node.data.value,
+          },
+        }));
+
+        const circuitData = {
+          nodes: nodesWithCurrentValues,
+          edges,
+          viewport: reactFlowInstance?.getViewport() || { x: 0, y: 0, zoom: 1 },
+          inputValues,
+          outputValues,
+        };
+
+        const response = await fetch(`/api/circuits/${currentCircuitId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            circuit_data: circuitData,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update circuit");
+        }
+
+        console.log("Circuit updated successfully");
+      } catch (error) {
+        console.error("Error updating circuit:", error);
+        alert("Failed to update circuit. Please try again.");
+      } finally {
+        setSaving(false);
+      }
+    } else {
+      setShowSaveModal(true);
     }
   };
 
@@ -751,13 +813,24 @@ function CircuitMaker() {
           </button>
 
           <button
-            onClick={() => setShowSaveModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors"
+            onClick={handleSaveButtonClick}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="w-4 h-4" />
-            <span className="text-sm font-medium">Save Circuit</span>
+            {saving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+                <span className="text-sm font-medium">Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {currentCircuitId ? "Save" : "Save Circuit"}
+                </span>
+              </>
+            )}
           </button>
-
           <Link href="/dashboard">
             <button
               onClick={() => {
@@ -767,7 +840,7 @@ function CircuitMaker() {
             >
               <User className="w-4 h-4 text-white/70" />
               <span className="text-sm text-white/90">
-                {user.firstName || 'Test User'}
+                {user.firstName || "Test User"}
               </span>
             </button>
           </Link>

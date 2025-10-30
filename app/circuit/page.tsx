@@ -147,7 +147,6 @@ function CircuitMaker() {
     null
   );
 
-  // Temporarily disabled Clerk
   const { user, isLoaded } = useUser();
   // const user = { id: "temp-user", firstName: "Test" }; // Mock user for testing
   // const isLoaded = true;

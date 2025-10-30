@@ -11,7 +11,6 @@ import { useState } from "react";
 import Loader from "@/components/Loader";
 
 export default function Home() {
-  // Temporarily disabled Clerk
   const { user, isLoaded } = useUser();
   // const user = null; // Mock user for testing
   // const isLoaded = true;
@@ -48,7 +47,6 @@ export default function Home() {
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            {/* Temporarily disabled Clerk auth buttons */}
             <SignInButton mode="modal">
               <button className="flex items-center gap-2 px-4 py-2 border border-white/20 rounded-full text-white/90 hover:bg-white/10 transition-colors">
                 <LogIn className="w-4 h-4" />

@@ -3,7 +3,6 @@ import { getCurrentUser, getUserByClerkId } from "@/lib/auth";
 import { DatabaseUser } from "@/lib/auth";
 
 export async function getServerUser(): Promise<DatabaseUser | null> {
-  // Temporarily disabled for testing
   const { userId } = await auth();
 
   if (!userId) {
@@ -47,8 +46,7 @@ export async function requireAuth(): Promise<DatabaseUser> {
 }
 
 export async function getClerkUserId(): Promise<string | null> {
-  // Temporarily disabled for testing
   const { userId } = await auth();
-  // const userId = "temp-clerk-id";
+  // const userId = "temp-clerk-id"; //mock user
   return userId;
 }

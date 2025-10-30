@@ -510,6 +510,60 @@ function CircuitMaker() {
     }
   };
 
+  const handleSaveButtonClick = async () => {
+    if (!user) return;
+
+    // If circuit already exists, update it directly without showing modal
+    if (currentCircuitId) {
+      setSaving(true);
+      try {
+        const nodesWithCurrentValues = nodes.map((node) => ({
+          ...node,
+          data: {
+            ...node.data,
+            value:
+              node.type === "ip"
+                ? inputValues[node.id]
+                : node.type === "op"
+                ? outputValues[node.id]
+                : node.data.value,
+          },
+        }));
+
+        const circuitData = {
+          nodes: nodesWithCurrentValues,
+          edges,
+          viewport: reactFlowInstance?.getViewport() || { x: 0, y: 0, zoom: 1 },
+          inputValues,
+          outputValues,
+        };
+
+        const response = await fetch(`/api/circuits/${currentCircuitId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            circuit_data: circuitData,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update circuit");
+        }
+
+        console.log("Circuit updated successfully");
+      } catch (error) {
+        console.error("Error updating circuit:", error);
+        alert("Failed to update circuit. Please try again.");
+      } finally {
+        setSaving(false);
+      }
+    } else {
+      setShowSaveModal(true);
+    }
+  };
+
   const handleLoadCircuit = (circuit: any) => {
     setLoading(true);
     try {
@@ -745,13 +799,24 @@ function CircuitMaker() {
           </button>
 
           <button
-            onClick={() => setShowSaveModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors"
+            onClick={handleSaveButtonClick}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="w-4 h-4" />
-            <span className="text-sm font-medium">Save Circuit</span>
+            {saving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+                <span className="text-sm font-medium">Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {currentCircuitId ? "Save" : "Save Circuit"}
+                </span>
+              </>
+            )}
           </button>
-
           <Link href="/dashboard">
             <button
               onClick={() => {

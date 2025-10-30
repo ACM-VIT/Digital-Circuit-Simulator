@@ -1,13 +1,13 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-// import { useUser } from '@clerk/nextjs';
-import { motion } from 'framer-motion';
-import toast from 'react-hot-toast';
-import { 
-  CircuitBoard, 
-  Plus, 
-  Search, 
-  Filter, 
+import React, { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
+import { motion } from "framer-motion";
+import toast from "react-hot-toast";
+import {
+  CircuitBoard,
+  Plus,
+  Search,
+  Filter,
   Calendar,
   Tag,
   FolderOpen,
@@ -17,12 +17,12 @@ import {
   Settings,
   User,
   FolderPlus,
-  Move
-} from 'lucide-react';
-import Link from 'next/link';
-import Loader from '@/components/Loader';
-import CategoryModal from '@/components/CategoryModal';
-import ConfirmationModal from '@/components/ConfirmationModal';
+  Move,
+} from "lucide-react";
+import Link from "next/link";
+import Loader from "@/components/Loader";
+import CategoryModal from "@/components/CategoryModal";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 interface Circuit {
   id: string;
@@ -48,22 +48,24 @@ interface Label {
 }
 
 export default function Dashboard() {
-  // Temporarily disabled Clerk
-  // const { user, isLoaded } = useUser();
-  const user = { id: 'temp-user', firstName: 'Test' }; // Mock user for testing
-  const isLoaded = true;
-  
+  const { user, isLoaded } = useUser();
+  // const user = { id: 'temp-user', firstName: 'Test' }; // Mock user for testing
+  // const isLoaded = true;
+
   const [circuits, setCircuits] = useState<Circuit[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingPage, setLoadingPage] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const [showCreateLabel, setShowCreateLabel] = useState(false);
   const [movingCircuitId, setMovingCircuitId] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<{ type: 'circuit' | 'category', id: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{
+    type: "circuit" | "category";
+    id: string;
+  } | null>(null);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -108,36 +110,42 @@ export default function Dashboard() {
       });
 
       if (response.ok) {
-        setCircuits(prev => prev.filter(circuit => circuit.id !== circuitId));
-        toast.success('Circuit deleted successfully');
+        setCircuits((prev) =>
+          prev.filter((circuit) => circuit.id !== circuitId)
+        );
+        toast.success("Circuit deleted successfully");
       } else {
-        toast.error('Failed to delete circuit');
+        toast.error("Failed to delete circuit");
       }
     } catch (error) {
-      console.error('Error deleting circuit:', error);
-      toast.error('Error deleting circuit');
+      console.error("Error deleting circuit:", error);
+      toast.error("Error deleting circuit");
     }
   };
 
-  const createCategory = async (name: string, color: string, description?: string) => {
+  const createCategory = async (
+    name: string,
+    color: string,
+    description?: string
+  ) => {
     try {
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, color, description })
+      const response = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, color, description }),
       });
 
       if (response.ok) {
         const newCategory = await response.json();
         setCategories((prev) => [...prev, newCategory]);
         setShowCreateCategory(false);
-        toast.success('Category created successfully!');
+        toast.success("Category created successfully!");
       } else {
-        toast.error('Failed to create category');
+        toast.error("Failed to create category");
       }
     } catch (error) {
-      console.error('Error creating category:', error);
-      toast.error('Error creating category');
+      console.error("Error creating category:", error);
+      toast.error("Error creating category");
       throw error;
     }
   };
@@ -145,45 +153,52 @@ export default function Dashboard() {
   const deleteCategory = async (categoryId: string) => {
     try {
       const response = await fetch(`/api/categories/${categoryId}`, {
-        method: 'DELETE'
+        method: "DELETE",
       });
 
       if (response.ok) {
-        setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-        if (selectedCategory === categories.find(c => c.id === categoryId)?.name) {
-          setSelectedCategory('all');
+        setCategories((prev) => prev.filter((cat) => cat.id !== categoryId));
+        if (
+          selectedCategory === categories.find((c) => c.id === categoryId)?.name
+        ) {
+          setSelectedCategory("all");
         }
         // Reload circuits to update their category associations
         loadData();
-        toast.success('Category deleted successfully');
+        toast.success("Category deleted successfully");
       } else {
-        toast.error('Failed to delete category');
+        toast.error("Failed to delete category");
       }
     } catch (error) {
-      console.error('Error deleting category:', error);
-      toast.error('Error deleting category');
+      console.error("Error deleting category:", error);
+      toast.error("Error deleting category");
     }
   };
 
-  const moveCircuitToCategory = async (circuitId: string, categoryIds: string[]) => {
+  const moveCircuitToCategory = async (
+    circuitId: string,
+    categoryIds: string[]
+  ) => {
     try {
       const response = await fetch(`/api/circuits/${circuitId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category_ids: categoryIds })
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category_ids: categoryIds }),
       });
 
       if (response.ok) {
         const updatedCircuit = await response.json();
-        setCircuits(prev => prev.map(c => c.id === circuitId ? updatedCircuit : c));
+        setCircuits((prev) =>
+          prev.map((c) => (c.id === circuitId ? updatedCircuit : c))
+        );
         setMovingCircuitId(null);
-        toast.success('Circuit moved successfully!');
+        toast.success("Circuit moved successfully!");
       } else {
-        toast.error('Failed to move circuit');
+        toast.error("Failed to move circuit");
       }
     } catch (error) {
-      console.error('Error moving circuit:', error);
-      toast.error('Error moving circuit');
+      console.error("Error moving circuit:", error);
+      toast.error("Error moving circuit");
     }
   };
 
@@ -261,7 +276,7 @@ export default function Dashboard() {
                 className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300"
               >
                 <CircuitBoard className="w-6 h-6" />
-                <span 
+                <span
                   onClick={() => setLoadingPage(true)}
                   className="text-xl font-bold"
                 >
@@ -274,7 +289,7 @@ export default function Dashboard() {
 
             <div className="flex items-center gap-4">
               <Link href="/circuit">
-                <button 
+                <button
                   onClick={() => setLoadingPage(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-emerald-300 hover:bg-emerald-500/30 transition-colors"
                 >
@@ -390,7 +405,7 @@ export default function Dashboard() {
               Your Categories
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {categories.map(category => (
+              {categories.map((category) => (
                 <div
                   key={category.id}
                   className="relative group bg-black/40 border border-white/10 rounded-lg p-3 hover:bg-black/60 transition-colors"
@@ -405,10 +420,19 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <p className="text-xs text-white/50">
-                    {circuits.filter(c => c.categories.some(cat => cat.category.name === category.name)).length} circuits
+                    {
+                      circuits.filter((c) =>
+                        c.categories.some(
+                          (cat) => cat.category.name === category.name
+                        )
+                      ).length
+                    }{" "}
+                    circuits
                   </p>
                   <button
-                    onClick={() => setConfirmDelete({ type: 'category', id: category.id })}
+                    onClick={() =>
+                      setConfirmDelete({ type: "category", id: category.id })
+                    }
                     className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded transition-all"
                     title="Delete category"
                   >
@@ -437,7 +461,7 @@ export default function Dashboard() {
                 : "Create your first circuit to get started"}
             </p>
             <Link href="/circuit">
-              <button 
+              <button
                 onClick={() => setLoadingPage(true)}
                 className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-black font-semibold rounded-lg hover:bg-emerald-400 transition-colors mx-auto"
               >
@@ -461,15 +485,19 @@ export default function Dashboard() {
                   </h3>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={() => setMovingCircuitId(movingCircuitId === circuit.id ? null : circuit.id)}
+                      onClick={() =>
+                        setMovingCircuitId(
+                          movingCircuitId === circuit.id ? null : circuit.id
+                        )
+                      }
                       className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors"
                       title="Move to category"
                     >
                       <Move className="w-4 h-4 text-blue-400" />
                     </button>
                     <Link href={`/circuit?load=${circuit.id}`}>
-                      <button 
-                        className="p-2 hover:bg-emerald-500/20 rounded-lg transition-colors" 
+                      <button
+                        className="p-2 hover:bg-emerald-500/20 rounded-lg transition-colors"
                         title="Load circuit"
                         onClick={() => setLoadingPage(true)}
                       >
@@ -477,7 +505,9 @@ export default function Dashboard() {
                       </button>
                     </Link>
                     <button
-                      onClick={() => setConfirmDelete({ type: 'circuit', id: circuit.id })}
+                      onClick={() =>
+                        setConfirmDelete({ type: "circuit", id: circuit.id })
+                      }
                       className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
                       title="Delete circuit"
                     >
@@ -489,10 +519,14 @@ export default function Dashboard() {
                 {/* Move to Category Dropdown */}
                 {movingCircuitId === circuit.id && (
                   <div className="mb-4 p-3 bg-black/60 border border-blue-500/30 rounded-lg">
-                    <p className="text-xs text-blue-300 mb-2">Select categories:</p>
+                    <p className="text-xs text-blue-300 mb-2">
+                      Select categories:
+                    </p>
                     <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {categories.map(category => {
-                        const isSelected = circuit.categories.some(c => c.category.name === category.name);
+                      {categories.map((category) => {
+                        const isSelected = circuit.categories.some(
+                          (c) => c.category.name === category.name
+                        );
                         return (
                           <label
                             key={category.id}
@@ -502,15 +536,25 @@ export default function Dashboard() {
                               type="checkbox"
                               checked={isSelected}
                               onChange={(e) => {
-                                const currentCategoryIds = circuit.categories.map(c => 
-                                  categories.find(cat => cat.name === c.category.name)?.id
-                                ).filter(Boolean) as string[];
-                                
+                                const currentCategoryIds = circuit.categories
+                                  .map(
+                                    (c) =>
+                                      categories.find(
+                                        (cat) => cat.name === c.category.name
+                                      )?.id
+                                  )
+                                  .filter(Boolean) as string[];
+
                                 const newCategoryIds = e.target.checked
                                   ? [...currentCategoryIds, category.id]
-                                  : currentCategoryIds.filter(id => id !== category.id);
-                                
-                                moveCircuitToCategory(circuit.id, newCategoryIds);
+                                  : currentCategoryIds.filter(
+                                      (id) => id !== category.id
+                                    );
+
+                                moveCircuitToCategory(
+                                  circuit.id,
+                                  newCategoryIds
+                                );
                               }}
                               className="w-3 h-3 text-blue-500 bg-transparent border-white/20 rounded"
                             />
@@ -518,7 +562,9 @@ export default function Dashboard() {
                               className="w-2 h-2 rounded-full"
                               style={{ backgroundColor: category.color }}
                             />
-                            <span className="text-xs text-white/90">{category.name}</span>
+                            <span className="text-xs text-white/90">
+                              {category.name}
+                            </span>
                           </label>
                         );
                       })}
@@ -601,7 +647,7 @@ export default function Dashboard() {
         onClose={() => setConfirmDelete(null)}
         onConfirm={() => {
           if (confirmDelete) {
-            if (confirmDelete.type === 'circuit') {
+            if (confirmDelete.type === "circuit") {
               deleteCircuit(confirmDelete.id);
             } else {
               deleteCategory(confirmDelete.id);
@@ -609,11 +655,15 @@ export default function Dashboard() {
             setConfirmDelete(null);
           }
         }}
-        title={confirmDelete?.type === 'circuit' ? 'Delete Circuit' : 'Delete Category'}
+        title={
+          confirmDelete?.type === "circuit"
+            ? "Delete Circuit"
+            : "Delete Category"
+        }
         message={
-          confirmDelete?.type === 'circuit'
-            ? 'Are you sure you want to delete this circuit? This action cannot be undone.'
-            : 'Are you sure you want to delete this category? Circuits in this category will not be deleted.'
+          confirmDelete?.type === "circuit"
+            ? "Are you sure you want to delete this circuit? This action cannot be undone."
+            : "Are you sure you want to delete this category? Circuits in this category will not be deleted."
         }
       />
     </div>

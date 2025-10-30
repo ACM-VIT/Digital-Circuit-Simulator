@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Orbitron } from "next/font/google";
-// import { ClerkProvider } from '@clerk/nextjs';
-// import UserSync from '@/components/UserSync';
-import ToastProvider from '@/components/ToastProvider';
+import { ClerkProvider } from "@clerk/nextjs";
+import UserSync from "@/components/UserSync";
+import ToastProvider from "@/components/ToastProvider";
 
 const orbitron = Orbitron({
   subsets: ["latin"],
@@ -12,9 +12,10 @@ const orbitron = Orbitron({
 export const metadata: Metadata = {
   title: {
     default: "Digital Circuit Simulator | ACM VIT",
-    template: "%s | Digital Circuit Simulator"
+    template: "%s | Digital Circuit Simulator",
   },
-  description: "A web-based digital logic circuit simulator that allows users to visually design, build, and test digital circuits in their browser without needing physical hardware. Perfect for students, educators, and hobbyists.",
+  description:
+    "A web-based digital logic circuit simulator that allows users to visually design, build, and test digital circuits in their browser without needing physical hardware. Perfect for students, educators, and hobbyists.",
   keywords: [
     "digital circuit simulator",
     "logic gates",
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
     "circuit design",
     "educational tool",
     "interactive learning",
-    "ACM VIT"
+    "ACM VIT",
   ],
   authors: [{ name: "ACM VIT" }],
   creator: "ACM VIT",
@@ -34,23 +35,25 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://github.com/ACM-VIT/Digital-Circuit-Simulator",
     title: "Digital Circuit Simulator | ACM VIT",
-    description: "A web-based digital logic circuit simulator that allows users to visually design, build, and test digital circuits in their browser without needing physical hardware.",
+    description:
+      "A web-based digital logic circuit simulator that allows users to visually design, build, and test digital circuits in their browser without needing physical hardware.",
     siteName: "Digital Circuit Simulator",
     images: [
       {
         url: "/logo.svg",
         width: 1200,
         height: 630,
-        alt: "Digital Circuit Simulator - Interactive Logic Gate Design"
-      }
-    ]
+        alt: "Digital Circuit Simulator - Interactive Logic Gate Design",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Digital Circuit Simulator | ACM VIT",
-    description: "A web-based digital logic circuit simulator for designing and testing digital circuits in your browser.",
+    description:
+      "A web-based digital logic circuit simulator for designing and testing digital circuits in your browser.",
     images: ["/logo.svg"],
-    creator: "@acmvit"
+    creator: "@acmvit",
   },
   robots: {
     index: true,
@@ -60,15 +63,15 @@ export const metadata: Metadata = {
       follow: true,
       "max-video-preview": -1,
       "max-image-preview": "large",
-      "max-snippet": -1
-    }
+      "max-snippet": -1,
+    },
   },
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
-    apple: "/logo.svg"
+    apple: "/logo.svg",
   },
-  manifest: "/manifest.json"
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -77,17 +80,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // Temporarily disabled Clerk for testing
-    // <ClerkProvider
-    //   publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-    // >
+    <ClerkProvider
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+    >
       <html lang="en">
         <body className={orbitron.className}>
-          {/* <UserSync /> */}
+          <UserSync />
           <ToastProvider />
           {children}
         </body>
       </html>
-    // </ClerkProvider>
+    </ClerkProvider>
   );
 }

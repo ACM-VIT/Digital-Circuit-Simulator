@@ -35,9 +35,9 @@ import SaveCircuitModal, {
 } from "@/components/SaveCircuitModal";
 import CircuitLibrary from "@/components/CircuitLibrary";
 import ConfirmationModal from "@/components/ConfirmationModal";
-// import { useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { Save, FolderOpen, User, Plus } from "lucide-react";
-// import UserSync from "@/components/UserSync";
+import UserSync from "@/components/UserSync";
 import Link from "next/link";
 import Loader from "@/components/Loader";
 
@@ -147,10 +147,9 @@ function CircuitMaker() {
     null
   );
 
-  // Temporarily disabled Clerk
-  // const { user, isLoaded } = useUser();
-  const user = { id: "temp-user", firstName: "Test" }; // Mock user for testing
-  const isLoaded = true;
+  const { user, isLoaded } = useUser();
+  // const user = { id: "temp-user", firstName: "Test" }; // Mock user for testing
+  // const isLoaded = true;
 
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -568,6 +567,8 @@ function CircuitMaker() {
           throw new Error("Failed to update circuit");
         }
 
+        toast.success("Circuit saved successfully!");
+
         console.log("Circuit updated successfully");
       } catch (error) {
         console.error("Error updating circuit:", error);
@@ -658,7 +659,7 @@ function CircuitMaker() {
   return (
     <ReactFlowProvider>
       {loadingPage && <Loader />}
-      {/* <UserSync /> */}
+      <UserSync />
       <div className="h-screen w-screen" ref={reactFlowWrapper}>
         {pendingNode && mousePos && (
           <div

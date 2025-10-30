@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Orbitron } from "next/font/google";
-import { ClerkProvider } from '@clerk/nextjs';
+// import { ClerkProvider } from '@clerk/nextjs';
+// import UserSync from '@/components/UserSync';
+import ToastProvider from '@/components/ToastProvider';
 
 const orbitron = Orbitron({
   subsets: ["latin"],
@@ -75,12 +77,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider
-      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-    >
+    // Temporarily disabled Clerk for testing
+    // <ClerkProvider
+    //   publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+    // >
       <html lang="en">
-        <body className={orbitron.className}>{children}</body>
+        <body className={orbitron.className}>
+          {/* <UserSync /> */}
+          <ToastProvider />
+          {children}
+        </body>
       </html>
-    </ClerkProvider>
+    // </ClerkProvider>
   );
 }

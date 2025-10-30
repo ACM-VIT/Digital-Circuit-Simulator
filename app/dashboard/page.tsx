@@ -1,12 +1,13 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
-import { motion } from "framer-motion";
-import {
-  CircuitBoard,
-  Plus,
-  Search,
-  Filter,
+import React, { useState, useEffect } from 'react';
+// import { useUser } from '@clerk/nextjs';
+import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
+import { 
+  CircuitBoard, 
+  Plus, 
+  Search, 
+  Filter, 
   Calendar,
   Tag,
   FolderOpen,
@@ -15,9 +16,13 @@ import {
   Play,
   Settings,
   User,
-} from "lucide-react";
-import Link from "next/link";
-import Loader from "@/components/Loader";
+  FolderPlus,
+  Move
+} from 'lucide-react';
+import Link from 'next/link';
+import Loader from '@/components/Loader';
+import CategoryModal from '@/components/CategoryModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 interface Circuit {
   id: string;
@@ -43,16 +48,22 @@ interface Label {
 }
 
 export default function Dashboard() {
-  const { user, isLoaded } = useUser();
+  // Temporarily disabled Clerk
+  // const { user, isLoaded } = useUser();
+  const user = { id: 'temp-user', firstName: 'Test' }; // Mock user for testing
+  const isLoaded = true;
+  
   const [circuits, setCircuits] = useState<Circuit[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingPage, setLoadingPage] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const [showCreateLabel, setShowCreateLabel] = useState(false);
+  const [movingCircuitId, setMovingCircuitId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'circuit' | 'category', id: string } | null>(null);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -91,38 +102,88 @@ export default function Dashboard() {
   };
 
   const deleteCircuit = async (circuitId: string) => {
-    if (!confirm("Are you sure you want to delete this circuit?")) return;
-
     try {
       const response = await fetch(`/api/circuits/${circuitId}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
-        setCircuits((prev) =>
-          prev.filter((circuit) => circuit.id !== circuitId)
-        );
+        setCircuits(prev => prev.filter(circuit => circuit.id !== circuitId));
+        toast.success('Circuit deleted successfully');
+      } else {
+        toast.error('Failed to delete circuit');
       }
     } catch (error) {
-      console.error("Error deleting circuit:", error);
+      console.error('Error deleting circuit:', error);
+      toast.error('Error deleting circuit');
     }
   };
 
-  const createCategory = async (name: string, color: string) => {
+  const createCategory = async (name: string, color: string, description?: string) => {
     try {
-      const response = await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, color }),
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, color, description })
       });
 
       if (response.ok) {
         const newCategory = await response.json();
         setCategories((prev) => [...prev, newCategory]);
         setShowCreateCategory(false);
+        toast.success('Category created successfully!');
+      } else {
+        toast.error('Failed to create category');
       }
     } catch (error) {
-      console.error("Error creating category:", error);
+      console.error('Error creating category:', error);
+      toast.error('Error creating category');
+      throw error;
+    }
+  };
+
+  const deleteCategory = async (categoryId: string) => {
+    try {
+      const response = await fetch(`/api/categories/${categoryId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+        if (selectedCategory === categories.find(c => c.id === categoryId)?.name) {
+          setSelectedCategory('all');
+        }
+        // Reload circuits to update their category associations
+        loadData();
+        toast.success('Category deleted successfully');
+      } else {
+        toast.error('Failed to delete category');
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast.error('Error deleting category');
+    }
+  };
+
+  const moveCircuitToCategory = async (circuitId: string, categoryIds: string[]) => {
+    try {
+      const response = await fetch(`/api/circuits/${circuitId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category_ids: categoryIds })
+      });
+
+      if (response.ok) {
+        const updatedCircuit = await response.json();
+        setCircuits(prev => prev.map(c => c.id === circuitId ? updatedCircuit : c));
+        setMovingCircuitId(null);
+        toast.success('Circuit moved successfully!');
+      } else {
+        toast.error('Failed to move circuit');
+      }
+    } catch (error) {
+      console.error('Error moving circuit:', error);
+      toast.error('Error moving circuit');
     }
   };
 
@@ -200,7 +261,7 @@ export default function Dashboard() {
                 className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300"
               >
                 <CircuitBoard className="w-6 h-6" />
-                <span
+                <span 
                   onClick={() => setLoadingPage(true)}
                   className="text-xl font-bold"
                 >
@@ -213,7 +274,7 @@ export default function Dashboard() {
 
             <div className="flex items-center gap-4">
               <Link href="/circuit">
-                <button
+                <button 
                   onClick={() => setLoadingPage(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-emerald-300 hover:bg-emerald-500/30 transition-colors"
                 >
@@ -312,7 +373,52 @@ export default function Dashboard() {
               ))}
             </select>
           </div>
+          <button
+            onClick={() => setShowCreateCategory(true)}
+            className="flex items-center gap-2 px-4 py-3 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-300 hover:bg-blue-500/30 transition-colors"
+          >
+            <FolderPlus className="w-4 h-4" />
+            New Category
+          </button>
         </div>
+
+        {/* Categories List - Show when categories exist */}
+        {categories.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <FolderOpen className="w-5 h-5" />
+              Your Categories
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {categories.map(category => (
+                <div
+                  key={category.id}
+                  className="relative group bg-black/40 border border-white/10 rounded-lg p-3 hover:bg-black/60 transition-colors"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <span className="text-sm font-medium text-white truncate">
+                      {category.name}
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/50">
+                    {circuits.filter(c => c.categories.some(cat => cat.category.name === category.name)).length} circuits
+                  </p>
+                  <button
+                    onClick={() => setConfirmDelete({ type: 'category', id: category.id })}
+                    className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded transition-all"
+                    title="Delete category"
+                  >
+                    <Trash2 className="w-3 h-3 text-red-400" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Circuits Grid */}
         {loading ? (
@@ -331,7 +437,7 @@ export default function Dashboard() {
                 : "Create your first circuit to get started"}
             </p>
             <Link href="/circuit">
-              <button
+              <button 
                 onClick={() => setLoadingPage(true)}
                 className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-black font-semibold rounded-lg hover:bg-emerald-400 transition-colors mx-auto"
               >
@@ -347,16 +453,23 @@ export default function Dashboard() {
                 key={circuit.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-black/40 border border-white/10 rounded-xl p-6 hover:bg-black/60 transition-colors group"
+                className="bg-black/40 border border-white/10 rounded-xl p-6 hover:bg-black/60 transition-colors group relative"
               >
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="font-semibold text-white truncate">
                     {circuit.name}
                   </h3>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => setMovingCircuitId(movingCircuitId === circuit.id ? null : circuit.id)}
+                      className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors"
+                      title="Move to category"
+                    >
+                      <Move className="w-4 h-4 text-blue-400" />
+                    </button>
                     <Link href={`/circuit?load=${circuit.id}`}>
-                      <button
-                        className="p-2 hover:bg-emerald-500/20 rounded-lg transition-colors"
+                      <button 
+                        className="p-2 hover:bg-emerald-500/20 rounded-lg transition-colors" 
                         title="Load circuit"
                         onClick={() => setLoadingPage(true)}
                       >
@@ -364,7 +477,7 @@ export default function Dashboard() {
                       </button>
                     </Link>
                     <button
-                      onClick={() => deleteCircuit(circuit.id)}
+                      onClick={() => setConfirmDelete({ type: 'circuit', id: circuit.id })}
                       className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
                       title="Delete circuit"
                     >
@@ -372,6 +485,46 @@ export default function Dashboard() {
                     </button>
                   </div>
                 </div>
+
+                {/* Move to Category Dropdown */}
+                {movingCircuitId === circuit.id && (
+                  <div className="mb-4 p-3 bg-black/60 border border-blue-500/30 rounded-lg">
+                    <p className="text-xs text-blue-300 mb-2">Select categories:</p>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {categories.map(category => {
+                        const isSelected = circuit.categories.some(c => c.category.name === category.name);
+                        return (
+                          <label
+                            key={category.id}
+                            className="flex items-center gap-2 p-1 hover:bg-white/5 rounded cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                const currentCategoryIds = circuit.categories.map(c => 
+                                  categories.find(cat => cat.name === c.category.name)?.id
+                                ).filter(Boolean) as string[];
+                                
+                                const newCategoryIds = e.target.checked
+                                  ? [...currentCategoryIds, category.id]
+                                  : currentCategoryIds.filter(id => id !== category.id);
+                                
+                                moveCircuitToCategory(circuit.id, newCategoryIds);
+                              }}
+                              className="w-3 h-3 text-blue-500 bg-transparent border-white/20 rounded"
+                            />
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: category.color }}
+                            />
+                            <span className="text-xs text-white/90">{category.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {circuit.description && (
                   <p className="text-white/70 text-sm mb-4 line-clamp-2">
@@ -433,6 +586,36 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Category Modal */}
+      <CategoryModal
+        isOpen={showCreateCategory}
+        onClose={() => setShowCreateCategory(false)}
+        onSave={createCategory}
+        title="Create Category"
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete) {
+            if (confirmDelete.type === 'circuit') {
+              deleteCircuit(confirmDelete.id);
+            } else {
+              deleteCategory(confirmDelete.id);
+            }
+            setConfirmDelete(null);
+          }
+        }}
+        title={confirmDelete?.type === 'circuit' ? 'Delete Circuit' : 'Delete Category'}
+        message={
+          confirmDelete?.type === 'circuit'
+            ? 'Are you sure you want to delete this circuit? This action cannot be undone.'
+            : 'Are you sure you want to delete this category? Circuits in this category will not be deleted.'
+        }
+      />
     </div>
   );
 }

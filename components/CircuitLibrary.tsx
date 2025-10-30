@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { 
   CircuitBoard, 
   Clock, 
@@ -13,8 +14,13 @@ import {
   Search,
   Filter,
   Share2,
-  Copy
+  Copy,
+  Plus,
+  Move,
+  FolderPlus
 } from 'lucide-react';
+import CategoryModal from './CategoryModal';
+import ConfirmationModal from './ConfirmationModal';
 
 interface Circuit {
   id: string;
@@ -47,6 +53,9 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [categories, setCategories] = useState<Array<{ id: string; name: string; color: string }>>([]);
   const [copiedCircuitId, setCopiedCircuitId] = useState<string | null>(null);
+  const [movingCircuitId, setMovingCircuitId] = useState<string | null>(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -83,8 +92,6 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
   };
 
   const deleteCircuit = async (circuitId: string) => {
-    if (!confirm('Are you sure you want to delete this circuit?')) return;
-
     try {
       const response = await fetch(`/api/circuits/${circuitId}`, {
         method: 'DELETE'
@@ -92,9 +99,58 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
 
       if (response.ok) {
         setCircuits(prev => prev.filter(circuit => circuit.id !== circuitId));
+        toast.success('Circuit deleted successfully');
+      } else {
+        toast.error('Failed to delete circuit');
       }
     } catch (error) {
       console.error('Error deleting circuit:', error);
+      toast.error('Error deleting circuit');
+    }
+  };
+
+  const moveCircuitToCategory = async (circuitId: string, categoryIds: string[]) => {
+    try {
+      const response = await fetch(`/api/circuits/${circuitId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category_ids: categoryIds })
+      });
+
+      if (response.ok) {
+        const updatedCircuit = await response.json();
+        setCircuits(prev => prev.map(c => c.id === circuitId ? updatedCircuit : c));
+        setMovingCircuitId(null);
+        toast.success('Circuit moved successfully!');
+      } else {
+        toast.error('Failed to move circuit');
+      }
+    } catch (error) {
+      console.error('Error moving circuit:', error);
+      toast.error('Error moving circuit');
+    }
+  };
+
+  const createCategory = async (name: string, color: string, description?: string) => {
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, color, description })
+      });
+
+      if (response.ok) {
+        const newCategory = await response.json();
+        setCategories(prev => [...prev, newCategory]);
+        setShowCategoryModal(false);
+        toast.success('Category created successfully!');
+      } else {
+        toast.error('Failed to create category');
+      }
+    } catch (error) {
+      console.error('Error creating category:', error);
+      toast.error('Error creating category');
+      throw error;
     }
   };
 
@@ -193,6 +249,13 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
                 ))}
               </select>
             </div>
+            <button
+              onClick={() => setShowCategoryModal(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-300 hover:bg-blue-500/30 transition-colors"
+              title="Create new category"
+            >
+              <FolderPlus className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Circuits Grid */}
@@ -219,7 +282,7 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
                     key={circuit.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-black/40 border border-white/10 rounded-xl p-4 hover:bg-black/60 transition-colors group"
+                    className="bg-black/40 border border-white/10 rounded-xl p-4 hover:bg-black/60 transition-colors group relative"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -231,6 +294,13 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
                         )}
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => setMovingCircuitId(movingCircuitId === circuit.id ? null : circuit.id)}
+                          className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-colors"
+                          title="Move to category"
+                        >
+                          <Move className="w-4 h-4 text-blue-400" />
+                        </button>
                         <button
                           onClick={() => onLoadCircuit(circuit)}
                           className="p-1.5 hover:bg-emerald-500/20 rounded-lg transition-colors"
@@ -250,7 +320,7 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
                           )}
                         </button>
                         <button
-                          onClick={() => deleteCircuit(circuit.id)}
+                          onClick={() => setConfirmDelete(circuit.id)}
                           className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
                           title="Delete circuit"
                         >
@@ -258,6 +328,46 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
                         </button>
                       </div>
                     </div>
+
+                    {/* Move to Category Dropdown */}
+                    {movingCircuitId === circuit.id && categories.length > 0 && (
+                      <div className="mb-3 p-2 bg-black/60 border border-blue-500/30 rounded-lg">
+                        <p className="text-xs text-blue-300 mb-1.5">Select categories:</p>
+                        <div className="space-y-1 max-h-24 overflow-y-auto">
+                          {categories.map(category => {
+                            const isSelected = circuit.categories.some(c => c.category.name === category.name);
+                            return (
+                              <label
+                                key={category.id}
+                                className="flex items-center gap-2 p-1 hover:bg-white/5 rounded cursor-pointer"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    const currentCategoryIds = circuit.categories.map(c => 
+                                      categories.find(cat => cat.name === c.category.name)?.id
+                                    ).filter(Boolean) as string[];
+                                    
+                                    const newCategoryIds = e.target.checked
+                                      ? [...currentCategoryIds, category.id]
+                                      : currentCategoryIds.filter(id => id !== category.id);
+                                    
+                                    moveCircuitToCategory(circuit.id, newCategoryIds);
+                                  }}
+                                  className="w-3 h-3 text-blue-500 bg-transparent border-white/20 rounded"
+                                />
+                                <div
+                                  className="w-2 h-2 rounded-full"
+                                  style={{ backgroundColor: category.color }}
+                                />
+                                <span className="text-xs text-white/90">{category.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Circuit Preview */}
                     <div className="mb-3 p-2 bg-black/20 rounded-lg border border-white/5">
@@ -334,6 +444,28 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Category Modal */}
+      <CategoryModal
+        isOpen={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        onSave={createCategory}
+        title="Create Category"
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete) {
+            deleteCircuit(confirmDelete);
+            setConfirmDelete(null);
+          }
+        }}
+        title="Delete Circuit"
+        message="Are you sure you want to delete this circuit? This action cannot be undone."
+      />
     </AnimatePresence>
   );
 };

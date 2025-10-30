@@ -497,16 +497,16 @@ function CircuitMaker() {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error("Failed to save circuit");
+      }
+
       const result = await response.json();
 
       // If it's a new circuit, set the current circuit ID and update URL
       if (!currentCircuitId && result.id) {
         setCurrentCircuitId(result.id);
         updateUrlWithCircuitId(result.id);
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to save circuit");
       }
 
       console.log("Circuit saved successfully");

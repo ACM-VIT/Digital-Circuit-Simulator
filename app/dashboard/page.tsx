@@ -49,8 +49,6 @@ interface Label {
 
 export default function Dashboard() {
   const { user, isLoaded } = useUser();
-  // const user = { id: 'temp-user', firstName: 'Test' }; // Mock user for testing
-  // const isLoaded = true;
 
   const [circuits, setCircuits] = useState<Circuit[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);

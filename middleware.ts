@@ -20,15 +20,3 @@ export const config = {
   // for more information about configuring your Middleware
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
-
-// Temporary: Allow all routes without authentication
-// import { NextResponse } from 'next/server'
-// import type { NextRequest } from 'next/server'
-
-// export default function middleware(req: NextRequest) {
-//   return NextResponse.next()
-// }
-
-// export const config = {
-//   matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
-// }

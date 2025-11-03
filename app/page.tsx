@@ -12,15 +12,13 @@ import Loader from "@/components/Loader";
 
 export default function Home() {
   const { user, isLoaded } = useUser();
-  // const user = null; // Mock user for testing
-  // const isLoaded = true;
   const [loading, setLoading] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#1b1c1d] flex flex-col relative overflow-hidden">
       {loading && <Loader />}
-      {/* Auto-sync user with database when authenticated */}
-      <UserSync />
+  {/* Auto-sync user with database when authenticated */}
+  <UserSync />
       {/* Header with Auth */}
       <div className="absolute top-6 right-6 z-10">
         {isLoaded && user ? (

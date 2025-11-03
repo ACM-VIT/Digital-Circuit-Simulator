@@ -36,6 +36,7 @@ interface ToolbarProps {
   combinationalCircuits: GateType[];
   onTogglePalette: () => void;
   onPaletteSelect: (type: string, gate?: GateType) => void;
+  onRemoveCombinational?: (circuitName: string) => void;
   indexToLabel: (index: number) => string;
 }
 
@@ -95,6 +96,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   combinationalCircuits,
   onTogglePalette,
   onPaletteSelect,
+  onRemoveCombinational,
   indexToLabel,
 }) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -441,6 +443,18 @@ const Toolbar: React.FC<ToolbarProps> = ({
                                         className="w-3 h-3 rounded-full border border-white/20"
                                         style={{ backgroundColor: item.color }}
                                       />
+                                    )}
+                                    {isCombinationalCircuit(category) && onRemoveCombinational && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onRemoveCombinational(item.name);
+                                        }}
+                                        className="p-1 rounded hover:bg-red-500/20 transition-colors"
+                                        title="Remove from toolbar"
+                                      >
+                                        <X className="w-3 h-3 text-red-400" />
+                                      </button>
                                     )}
                                   </div>
                                 </motion.button>

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-// import { useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import {
@@ -48,10 +48,7 @@ interface Label {
 }
 
 export default function Dashboard() {
-  // Temporarily disabled Clerk
-  // const { user, isLoaded } = useUser();
-  const user = { id: 'temp-user', firstName: 'Test' }; // Mock user for testing
-  const isLoaded = true;
+  const { user, isLoaded } = useUser();
 
   const [circuits, setCircuits] = useState<Circuit[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Orbitron } from "next/font/google";
-// import { ClerkProvider } from "@clerk/nextjs";
-// import UserSync from "@/components/UserSync";
+import { ClerkProvider } from "@clerk/nextjs";
+import UserSync from "@/components/UserSync";
 import ToastProvider from "@/components/ToastProvider";
 
 const orbitron = Orbitron({
@@ -82,8 +82,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={orbitron.className}>
-        <ToastProvider />
-        {children}
+        <ClerkProvider>
+          <ToastProvider />
+          <UserSync />
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );

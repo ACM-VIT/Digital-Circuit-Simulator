@@ -35,9 +35,9 @@ import SaveCircuitModal, {
 } from "@/components/SaveCircuitModal";
 import CircuitLibrary from "@/components/CircuitLibrary";
 import ConfirmationModal from "@/components/ConfirmationModal";
-import { useUser } from "@clerk/nextjs";
+// import { useUser } from "@clerk/nextjs";
 import { Save, FolderOpen, User, Plus } from "lucide-react";
-import UserSync from "@/components/UserSync";
+// import UserSync from "@/components/UserSync";
 import Link from "next/link";
 import Loader from "@/components/Loader";
 
@@ -147,9 +147,10 @@ function CircuitMaker() {
     null
   );
 
-  const { user, isLoaded } = useUser();
-  // const user = { id: "temp-user", firstName: "Test" }; // Mock user for testing
-  // const isLoaded = true;
+  // Temporarily disabled Clerk
+  // const { user, isLoaded } = useUser();
+  const user = { id: "temp-user", firstName: "Test" }; // Mock user for testing
+  const isLoaded = true;
 
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -164,9 +165,18 @@ function CircuitMaker() {
   const addCombinationalCircuit = (gate: GateType) => {
     setCombinationalGates((prev) => {
       // avoid duplicates by name (or use id)
-      if (prev.some((g) => g.name === gate.name)) return prev;
+      if (prev.some((g) => g.name === gate.name)) {
+        toast('Circuit already added to toolbar', { icon: 'ℹ️' });
+        return prev;
+      }
+      toast.success(`Added ${gate.name} to toolbar`);
       return [...prev, { ...gate, id: v4(), isCombinational: true }]; // give unique id for toolbar instance
     });
+  };
+
+  const removeCombinationalCircuit = (circuitName: string) => {
+    setCombinationalGates((prev) => prev.filter((g) => g.name !== circuitName));
+    toast.success(`Removed ${circuitName} from toolbar`);
   };
 
   useEffect(() => {
@@ -659,7 +669,7 @@ function CircuitMaker() {
   return (
     <ReactFlowProvider>
       {loadingPage && <Loader />}
-      <UserSync />
+      {/* <UserSync /> */}
       <div className="h-screen w-screen" ref={reactFlowWrapper}>
         {pendingNode && mousePos && (
           <div
@@ -789,6 +799,7 @@ function CircuitMaker() {
         combinationalCircuits={combinationalGates}
         onTogglePalette={handleTogglePalette}
         onPaletteSelect={handlePaletteSelect}
+        onRemoveCombinational={removeCombinationalCircuit}
         indexToLabel={indexToLabel}
       />
 

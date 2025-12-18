@@ -22,12 +22,24 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 import { v4 } from "uuid";
+import toast from "react-hot-toast";
 
 import "reactflow/dist/style.css";
 import Input from "@/app/circuit/components/nodes/input";
 import Output from "@/app/circuit/components/nodes/output";
 import Gate from "@/app/circuit/components/nodes/gate";
 import Toolbar from "@/components/Toolbar";
+import Library from "@/components/Library";
+import SaveCircuitModal, {
+  SaveCircuitData,
+} from "@/components/SaveCircuitModal";
+import CircuitLibrary from "@/components/CircuitLibrary";
+import ConfirmationModal from "@/components/ConfirmationModal";
+import { useUser } from "@clerk/nextjs";
+import { Save, FolderOpen, User, Plus } from "lucide-react";
+import UserSync from "@/components/UserSync";
+import Link from "next/link";
+import Loader from "@/components/Loader";
 
 const indexToLabel = (index: number): string => {
   let result = "";
@@ -48,6 +60,7 @@ interface GateType {
   inputs?: string[];
   outputs: { [key: string]: string };
   circuit?: { gates: GateType[]; wires: Wire[] };
+  isCombinational?: boolean;
 }
 
 interface Wire {
@@ -122,6 +135,7 @@ function CircuitMaker() {
   const [outputValues, setOutputValues] = useState<{ [key: string]: boolean }>(
     {}
   );
+  const previousOutputValues = useRef<{ [key: string]: boolean }>({});
   const [paletteOpen, setPaletteOpen] = useState(true);
   const [pendingNode, setPendingNode] = useState<{
     type: string;
@@ -132,6 +146,89 @@ function CircuitMaker() {
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
     null
   );
+
+  const { user, isLoaded } = useUser();
+
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadingPage, setLoadingPage] = useState(false);
+  const [currentCircuitId, setCurrentCircuitId] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  const [combinationalGates, setCombinationalGates] = useState<GateType[]>([]);
+
+  const addCombinationalCircuit = (gate: GateType) => {
+    setCombinationalGates((prev) => {
+      // avoid duplicates by name (or use id)
+      if (prev.some((g) => g.name === gate.name)) {
+        toast('Circuit already added to toolbar', { icon: 'ℹ️' });
+        return prev;
+      }
+      toast.success(`Added ${gate.name} to toolbar`);
+      return [...prev, { ...gate, id: v4(), isCombinational: true }]; // give unique id for toolbar instance
+    });
+  };
+
+  const removeCombinationalCircuit = (circuitName: string) => {
+    setCombinationalGates((prev) => prev.filter((g) => g.name !== circuitName));
+    toast.success(`Removed ${circuitName} from toolbar`);
+  };
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const circuitId = urlParams.get("load");
+    if (circuitId && user) {
+      loadCircuitFromUrl(circuitId);
+    }
+  }, [user]);
+
+  const updateUrlWithCircuitId = (circuitId: string) => {
+    const newUrl = `/circuit?load=${circuitId}`;
+    window.history.pushState({}, "", newUrl);
+  };
+
+  const cleanUrl = () => {
+    window.history.pushState({}, "", "/circuit");
+  };
+
+  const startNewCircuit = () => {
+    setShowConfirmModal(true);
+  };
+
+  const confirmNewCircuit = () => {
+    setNodes([]);
+    setEdges([]);
+    setInputValues({});
+    setOutputValues({});
+    setCurrentCircuitId(null);
+    cleanUrl();
+  };
+
+  const loadCircuitFromUrl = async (circuitId: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/circuits/${circuitId}`);
+
+      if (response.ok) {
+        const circuit = await response.json();
+        handleLoadCircuit(circuit);
+      } else if (response.status === 404) {
+        toast.error("Circuit not found or you don't have access to it.");
+      } else if (response.status === 401) {
+        toast.error("Please sign in to access this circuit.");
+      } else {
+        toast.error("Error loading circuit. Please try again.");
+      }
+    } catch (error) {
+      toast.error(
+        "Network error loading circuit. Please check your connection."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -186,12 +283,11 @@ function CircuitMaker() {
     if (type === "io") {
       nodeType = gate?.name.toLowerCase() === "input" ? "ip" : "op";
     } else if (type === "circuit") {
-      nodeType = "gate"; // Circuits use gate node type for now
+      nodeType = "gate";
     }
 
     setPendingNode({ type: nodeType, gate });
     if (typeof window !== "undefined" && window.innerWidth < 768) {
-      // Don't close palette on mobile after selection, let user see the structure
     }
   }, []);
 
@@ -242,106 +338,335 @@ function CircuitMaker() {
   );
 
   useEffect(() => {
-    // function buildCircuit(){
-    //     const inputs = nodes.filter(node => node.type === 'ip');
-    //     const outputs = nodes.filter(node => node.type === 'op');
-    //     const gates = nodes.filter(node => node.type === 'gate');
-    //     const wires = edges;
-    //
-    //     const visited = new Set<string>();
-    //
-    //     function simplifyNode(node: Node){
-    //         if(node.type === 'ip'){
-    //             return node.data.label;
-    //         // }else if(node.type === 'op'){
-    //         //     return node.data.value;
-    //         }else if(node.type === 'gate'){
-    //             if (!visited.has(node.id)) {
-    //                 visited.add(node.id);
-    //                 if (node.data.logic){
-    //                     getIncomers(node, nodes, edges).map(node => simplifyNode(node));
-    //                 }
-    //             }
-    //
-    //         }
-    //     }
-    //
-    // }
-
     function simulateCircuit(
       nodes: Node[],
       edges: Edge[],
-      inputValues: { [key: string]: boolean }
+      inputValues: { [key: string]: boolean },
+      prevOutputValues: { [key: string]: boolean }
     ) {
       const inputs = nodes.filter((node) => node.type === "ip");
       const nodeStates = new Map<string, boolean>();
-      let queue: Node[] = [];
 
       inputs.forEach((input) => {
         nodeStates.set(input.id + "-o", inputValues[input.id] ?? false);
-        queue = [...queue, ...getOutgoers(input, nodes, edges)];
       });
 
-      function calculateNode(node: Node) {
+      nodes.forEach((node) => {
         if (node.type === "gate") {
-          const gate_inputs = edges
-            .filter((edge) => edge.target === node.id)
-            .map((edge) => {
-              const sourceValue = nodeStates.get(edge.sourceHandle!) ?? false;
-              nodeStates.set(edge.targetHandle!, sourceValue);
-              return `${edge.targetHandle!.split("-").pop()}=${sourceValue}`;
-            })
-            .join(",");
+          node.data.inputs.forEach((input: string) => {
+            const prevValue =
+              prevOutputValues[node.id + "-i-" + input] ?? false;
+            nodeStates.set(node.id + "-i-" + input, prevValue);
+          });
 
-          if (!Object.values(node.data.outputs).includes(null)) {
+          Object.keys(node.data.outputs).forEach((output) => {
+            const prevValue =
+              prevOutputValues[node.id + "-o-" + output] ?? false;
+            nodeStates.set(node.id + "-o-" + output, prevValue);
+          });
+        }
+      });
+
+      const MAX_ITERATIONS = 100; // for preventing infinity and black screen
+      let iteration = 0;
+      let hasChanges = true;
+
+      while (hasChanges && iteration < MAX_ITERATIONS) {
+        hasChanges = false;
+        iteration++;
+        nodes.forEach((node) => {
+          if (node.type === "gate") {
+            const gateInputs: { [key: string]: boolean } = {};
+
+            edges
+              .filter((edge) => edge.target === node.id)
+              .forEach((edge) => {
+                const sourceValue = nodeStates.get(edge.sourceHandle!) ?? false;
+                const inputName = edge.targetHandle!.split("-").pop()!;
+                gateInputs[inputName] = sourceValue;
+                const targetHandle = edge.targetHandle!;
+                const prevValue = nodeStates.get(targetHandle);
+                if (prevValue !== sourceValue) {
+                  nodeStates.set(targetHandle, sourceValue);
+                }
+              });
+
             Object.keys(node.data.outputs).forEach((output) => {
-              let result: boolean;
-              const current = nodeStates.get(node.id + "-o-" + output);
-              console.log(
-                `const ${gate_inputs}; return ${node.data.outputs[output]}`
-              );
-              result = new Function(
-                `let ${node.data.inputs
-                  .map((i: string) => i + "=false")
-                  .join(",")};${gate_inputs}; return ${
-                  node.data.outputs[output]
-                }`
-              )();
+              const outputHandle = node.id + "-o-" + output;
+              const currentValue = nodeStates.get(outputHandle) ?? false;
 
-              if (current !== result) {
-                nodeStates.set(node.id + "-o-" + output, result);
-                getOutgoers(node, nodes, edges).forEach((node) =>
-                  queue.push(node)
-                );
+              try {
+                const inputAssignments = node.data.inputs
+                  .map((i: string) => {
+                    const value = gateInputs[i] ?? false;
+                    return `${i}=${value}`;
+                  })
+                  .join(",");
+
+                const expression = node.data.outputs[output];
+                const result = new Function(
+                  `let ${inputAssignments}; return ${expression}`
+                )();
+
+                if (currentValue !== result) {
+                  nodeStates.set(outputHandle, result);
+                  hasChanges = true;
+                }
+              } catch (error) {
+                console.error(`Error evaluating gate ${node.id}:`, error);
               }
             });
-          } else {
-          }
-        }
+          } else if (node.type === "op") {
+            // Update output nodes
+            const source = edges.find((edge) => edge.target === node.id);
+            if (source) {
+              const sourceValue = nodeStates.get(source.sourceHandle!) ?? false;
+              const targetHandle = node.id + "-i";
+              const currentValue = nodeStates.get(targetHandle);
 
-        if (node.type === "op") {
-          console.log(node.id);
-          const source = edges.find((edge) => edge.target === node.id);
-          if (source) {
-            const sourceValue = nodeStates.get(source.sourceHandle!) ?? false;
-            nodeStates.set(node.id + "-i", sourceValue);
+              if (currentValue !== sourceValue) {
+                nodeStates.set(targetHandle, sourceValue);
+                hasChanges = true;
+              }
+            }
           }
-        }
+        });
       }
 
-      while (queue.length > 0) {
-        const node = queue.shift()!;
-        calculateNode(node);
+      if (iteration >= MAX_ITERATIONS) {
+        console.warn(
+          "Circuit simulation reached maximum iterations - possible oscillation or complex feedback"
+        );
       }
 
       return Object.fromEntries(nodeStates.entries());
     }
 
-    setOutputValues(simulateCircuit(nodes, edges, inputValues));
+    const newOutputValues = simulateCircuit(
+      nodes,
+      edges,
+      inputValues,
+      previousOutputValues.current
+    );
+    setOutputValues(newOutputValues);
+    previousOutputValues.current = newOutputValues;
   }, [edges, inputValues, nodes]);
+
+  useEffect(() => {
+    if (nodes.length > 0 && reactFlowInstance) {
+      setTimeout(() => {
+        if (reactFlowInstance) {
+          reactFlowInstance.fitView({ padding: 0.1 });
+        }
+      }, 100);
+    }
+  }, [nodes.length, edges.length, reactFlowInstance]);
+
+  useEffect(() => {
+    if (nodes.length === 0 && edges.length === 0) {
+      if (!loading) {
+        cleanUrl();
+      }
+    }
+  }, [nodes.length, edges.length, loading]);
+
+  const handleSaveCircuit = async (data: SaveCircuitData) => {
+    if (!user) return;
+
+    setSaving(true);
+    try {
+      const nodesWithCurrentValues = nodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          value:
+            node.type === "ip"
+              ? inputValues[node.id]
+              : node.type === "op"
+              ? outputValues[node.id]
+              : node.data.value,
+        },
+      }));
+
+      const circuitData = {
+        nodes: nodesWithCurrentValues,
+        edges,
+        viewport: reactFlowInstance?.getViewport() || { x: 0, y: 0, zoom: 1 },
+        inputValues,
+        outputValues,
+      };
+
+      const response = await fetch("/api/circuits", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description,
+          circuit_data: circuitData,
+          category_ids: data.category_ids,
+          label_ids: data.label_ids,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save circuit");
+      }
+      const savedCircuit = await response.json();
+
+      // If it's a new circuit, set the current circuit ID and update URL
+      if (!currentCircuitId && savedCircuit.id) {
+        setCurrentCircuitId(savedCircuit.id);
+        updateUrlWithCircuitId(savedCircuit.id);
+      }
+
+      toast.success("Circuit saved successfully!");
+      console.log("Circuit saved successfully");
+    } catch (error) {
+      console.error("Error saving circuit:", error);
+      toast.error("Failed to save circuit. Please try again.");
+      throw error;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveButtonClick = async () => {
+    if (!user) return;
+
+    // If circuit already exists, update it directly without showing modal
+    if (currentCircuitId) {
+      setSaving(true);
+      try {
+        const nodesWithCurrentValues = nodes.map((node) => ({
+          ...node,
+          data: {
+            ...node.data,
+            value:
+              node.type === "ip"
+                ? inputValues[node.id]
+                : node.type === "op"
+                ? outputValues[node.id]
+                : node.data.value,
+          },
+        }));
+
+        const circuitData = {
+          nodes: nodesWithCurrentValues,
+          edges,
+          viewport: reactFlowInstance?.getViewport() || { x: 0, y: 0, zoom: 1 },
+          inputValues,
+          outputValues,
+        };
+
+        const response = await fetch(`/api/circuits/${currentCircuitId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            circuit_data: circuitData,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update circuit");
+        }
+
+        toast.success("Circuit saved successfully!");
+
+        console.log("Circuit updated successfully");
+      } catch (error) {
+        console.error("Error updating circuit:", error);
+        alert("Failed to update circuit. Please try again.");
+      } finally {
+        setSaving(false);
+      }
+    } else {
+      setShowSaveModal(true);
+    }
+  };
+
+  const handleLoadCircuit = (circuit: any) => {
+    setLoading(true);
+    try {
+      const circuitData = circuit.circuit_data;
+
+      updateUrlWithCircuitId(circuit.id);
+      setCurrentCircuitId(circuit.id);
+
+      const transformedNodes =
+        circuitData.nodes?.map((node: any) => ({
+          ...node,
+          data: {
+            ...node.data,
+            id: node.id,
+            type: node.type,
+            position: node.position || { x: 0, y: 0 },
+            ...node.data,
+          },
+        })) || [];
+
+      const transformedEdges =
+        circuitData.edges?.map((edge: any) => ({
+          ...edge,
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          sourceHandle: edge.sourceHandle,
+          targetHandle: edge.targetHandle,
+          ...edge,
+        })) || [];
+
+      setNodes(transformedNodes);
+      setEdges(transformedEdges);
+
+      let newInputValues: { [key: string]: boolean } = {};
+      let newOutputValues: { [key: string]: boolean } = {};
+
+      if (circuitData.inputValues && circuitData.outputValues) {
+        newInputValues = circuitData.inputValues;
+        newOutputValues = circuitData.outputValues;
+      } else {
+        transformedNodes.forEach((node: any) => {
+          if (node.type === "ip") {
+            newInputValues[node.id] = node.data.value || false;
+          } else if (node.type === "op") {
+            newOutputValues[node.id] = node.data.value || false;
+          }
+        });
+      }
+
+      setInputValues(newInputValues);
+      setOutputValues(newOutputValues);
+
+      setShowLibrary(false);
+
+      setTimeout(() => {
+        if (circuitData.viewport && reactFlowInstance) {
+          reactFlowInstance.setViewport(circuitData.viewport);
+        }
+
+        setTimeout(() => {
+          if (reactFlowInstance) {
+            reactFlowInstance.fitView({ padding: 0.1 });
+            setNodes((prev) => [...prev]);
+            setEdges((prev) => [...prev]);
+          }
+
+          setLoading(false);
+        }, 200);
+      }, 100);
+    } catch (error) {
+      setLoading(false);
+    }
+  };
 
   return (
     <ReactFlowProvider>
+      {loadingPage && <Loader />}
+      {/* <UserSync /> */}
       <div className="h-screen w-screen" ref={reactFlowWrapper}>
         {pendingNode && mousePos && (
           <div
@@ -374,8 +699,15 @@ function CircuitMaker() {
                       return { ...prevState, [node.id]: !prevState[node.id] };
                     });
                   },
-                  remove: () =>
-                    setNodes((prev) => prev.filter((n) => n.id !== node.id)),
+                  remove: () => {
+                    setNodes((prev) => prev.filter((n) => n.id !== node.id));
+                    setEdges((prev) =>
+                      prev.filter(
+                        (edge) =>
+                          edge.source !== node.id && edge.target !== node.id
+                      )
+                    );
+                  },
                 },
               };
             }
@@ -385,8 +717,15 @@ function CircuitMaker() {
                 data: {
                   ...node.data,
                   value: outputValues[node.id + "-i"] ?? false,
-                  remove: () =>
-                    setNodes((prev) => prev.filter((n) => n.id !== node.id)),
+                  remove: () => {
+                    setNodes((prev) => prev.filter((n) => n.id !== node.id));
+                    setEdges((prev) =>
+                      prev.filter(
+                        (edge) =>
+                          edge.source !== node.id && edge.target !== node.id
+                      )
+                    );
+                  },
                 },
               };
             }
@@ -416,8 +755,15 @@ function CircuitMaker() {
                     ];
                   })
                 ),
-                remove: () =>
-                  setNodes((prev) => prev.filter((n) => n.id !== node.id)),
+                remove: () => {
+                  setNodes((prev) => prev.filter((n) => n.id !== node.id));
+                  setEdges((prev) =>
+                    prev.filter(
+                      (edge) =>
+                        edge.source !== node.id && edge.target !== node.id
+                    )
+                  );
+                },
               },
             };
           })}
@@ -447,9 +793,97 @@ function CircuitMaker() {
         pendingNode={pendingNode}
         nextLabelIndex={nextLabelIndex}
         GateList={GateList}
+        combinationalCircuits={combinationalGates}
         onTogglePalette={handleTogglePalette}
         onPaletteSelect={handlePaletteSelect}
+        onRemoveCombinational={removeCombinationalCircuit}
         indexToLabel={indexToLabel}
+      />
+
+      <Library onAddCombinational={addCombinationalCircuit} />
+
+      {/* User Actions */}
+      {isLoaded && user && (
+        <div className="absolute top-6 right-6 z-50 flex items-center gap-3">
+          <button
+            onClick={startNewCircuit}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-300 hover:bg-purple-500/30 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="text-sm font-medium">New Circuit</span>
+          </button>
+
+          <button
+            onClick={() => setShowLibrary(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-300 hover:bg-blue-500/30 transition-colors"
+          >
+            <FolderOpen className="w-4 h-4" />
+            <span className="text-sm font-medium">My Circuits</span>
+          </button>
+
+          <button
+            onClick={handleSaveButtonClick}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+                <span className="text-sm font-medium">Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {currentCircuitId ? "Save" : "Save Circuit"}
+                </span>
+              </>
+            )}
+          </button>
+          <Link href="/dashboard">
+            <button
+              onClick={() => {
+                setLoadingPage(true);
+              }}
+              className="flex items-center gap-2 px-3 py-2 bg-white/10 border-white/20 hover:bg-white/20 rounded-full"
+            >
+              <User className="w-4 h-4 text-white/70" />
+              <span className="text-sm text-white/90">
+                {user.firstName || "Test User"}
+              </span>
+            </button>
+          </Link>
+        </div>
+      )}
+
+      {loading && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-black/80 backdrop-blur-sm rounded-lg px-6 py-4 flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+          <span className="text-white font-medium">Loading circuit...</span>
+        </div>
+      )}
+      <SaveCircuitModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        onSave={handleSaveCircuit}
+        isLoading={saving}
+      />
+
+      <CircuitLibrary
+        isOpen={showLibrary}
+        onClose={() => setShowLibrary(false)}
+        onLoadCircuit={handleLoadCircuit}
+        currentCircuitId={currentCircuitId || undefined}
+      />
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={confirmNewCircuit}
+        title="Start New Circuit"
+        message="Are you sure you want to start a new circuit? This will clear the current circuit."
+        confirmText="Start New"
+        cancelText="Cancel"
+        confirmButtonColor="bg-purple-500 hover:bg-purple-600"
       />
     </ReactFlowProvider>
   );

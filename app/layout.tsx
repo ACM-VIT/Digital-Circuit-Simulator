@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Orbitron } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
-import UserSync from "@/components/UserSync";
-import ToastProvider from "@/components/ToastProvider";
+import { Outfit } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
 
-const orbitron = Orbitron({
+const outfit = Outfit({
   subsets: ["latin"],
+  variable: "--font-outfit",
 });
 
 export const metadata: Metadata = {
@@ -80,13 +79,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={orbitron.className}>
-        <ClerkProvider>
-          <ToastProvider />
-          <UserSync />
+    <html lang="en" suppressHydrationWarning>
+      <body className={outfit.className}>
+               <ThemeProvider>
           {children}
-        </ClerkProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

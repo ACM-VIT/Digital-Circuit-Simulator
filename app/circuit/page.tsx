@@ -35,6 +35,8 @@ import SaveCircuitModal, {
 } from "@/components/SaveCircuitModal";
 import CircuitLibrary from "@/components/CircuitLibrary";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { Header } from "@/components/landing-page";
+import { AuthModal } from "@/components/AuthModal";
 import { useUser } from "@clerk/nextjs";
 import { Save, FolderOpen, User, Plus } from "lucide-react";
 import UserSync from "@/components/UserSync";
@@ -156,6 +158,9 @@ function CircuitMaker() {
   const [loadingPage, setLoadingPage] = useState(false);
   const [currentCircuitId, setCurrentCircuitId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
 
   const [combinationalGates, setCombinationalGates] = useState<GateType[]>([]);
 
@@ -667,201 +672,230 @@ function CircuitMaker() {
     <ReactFlowProvider>
       {loadingPage && <Loader />}
       {/* <UserSync /> */}
-      <div className="h-screen w-screen" ref={reactFlowWrapper}>
-        {pendingNode && mousePos && (
+      <main className="min-h-screen bg-white dark:bg-[#111111]">
+        <Header
+          onLoginClick={() => setShowLogin(true)}
+          onRegisterClick={() => setShowRegister(true)}
+        />
+        <div className="container pb-12">
+          <div className="flex flex-col gap-2 pt-4">
+            <p className="text-xs uppercase tracking-[0.35em] text-[#7A7FEE]">Circuit Workspace</p>
+            <h1 className="text-3xl md:text-4xl font-semibold text-black dark:text-white">Build &amp; test with the same sleek experience</h1>
+            <p className="text-sm text-gray-700 dark:text-gray-300 max-w-2xl">
+              Drag, drop, and simulate your circuits in a focused canvas that mirrors the landing page styling.
+            </p>
+          </div>
+
           <div
-            className="pointer-events-none fixed z-50 opacity-70"
-            style={{
-              left: mousePos.x,
-              top: mousePos.y,
-            }}
+            className="card relative mt-6 overflow-visible"
+            ref={reactFlowWrapper}
           >
             <div
-              className="hidden md:block px-3 py-2 rounded-md text-white font-semibold shadow-md"
-              style={{ backgroundColor: pendingNode.gate?.color || "#444" }}
-            >
-              {pendingNode.gate?.name || "Node"}
+              className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#0f1115] via-[#13151b] to-[#0b0c10] opacity-90"
+              aria-hidden="true"
+            />
+            <div className="relative h-[70vh] md:h-[78vh] w-full">
+              {pendingNode && mousePos && (
+                <div
+                  className="pointer-events-none fixed z-50 opacity-70"
+                  style={{
+                    left: mousePos.x,
+                    top: mousePos.y,
+                  }}
+                >
+                  <div
+                    className="hidden md:block px-3 py-2 rounded-md text-white font-semibold shadow-md"
+                    style={{ backgroundColor: pendingNode.gate?.color || "#444" }}
+                  >
+                    {pendingNode.gate?.name || "Node"}
+                  </div>
+                </div>
+              )}
+
+              <ReactFlow
+                nodeTypes={nodeTypes}
+                nodes={nodes.map((node) => {
+                  if (node.type === "ip") {
+                    return {
+                      ...node,
+                      data: {
+                        ...node.data,
+                        value: outputValues[node.id + "-o"] ?? false,
+                        toggle: () => {
+                          setInputValues((prevState) => {
+                            return { ...prevState, [node.id]: !prevState[node.id] };
+                          });
+                        },
+                        remove: () => {
+                          setNodes((prev) => prev.filter((n) => n.id !== node.id));
+                          setEdges((prev) =>
+                            prev.filter(
+                              (edge) =>
+                                edge.source !== node.id && edge.target !== node.id
+                            )
+                          );
+                        },
+                      },
+                    };
+                  }
+                  if (node.type === "op") {
+                    return {
+                      ...node,
+                      data: {
+                        ...node.data,
+                        value: outputValues[node.id + "-i"] ?? false,
+                        remove: () => {
+                          setNodes((prev) => prev.filter((n) => n.id !== node.id));
+                          setEdges((prev) =>
+                            prev.filter(
+                              (edge) =>
+                                edge.source !== node.id && edge.target !== node.id
+                            )
+                          );
+                        },
+                      },
+                    };
+                  }
+                  return {
+                    ...node,
+                    data: {
+                      ...node.data,
+                      outputs: Object.fromEntries(
+                        Object.keys(node.data.outputs).map((i) => {
+                          return [
+                            i,
+                            {
+                              ...node.data.outputs[i],
+                              value: outputValues[node.id + "-o-" + i],
+                            },
+                          ];
+                        })
+                      ),
+                      inputvalues: Object.fromEntries(
+                        node.data.inputs.map((i: string) => {
+                          return [
+                            i,
+                            {
+                              ...node.data.inputs[i],
+                              value: outputValues[node.id + "-i-" + i],
+                            },
+                          ];
+                        })
+                      ),
+                      remove: () => {
+                        setNodes((prev) => prev.filter((n) => n.id !== node.id));
+                        setEdges((prev) =>
+                          prev.filter(
+                            (edge) =>
+                              edge.source !== node.id && edge.target !== node.id
+                          )
+                        );
+                      },
+                    },
+                  };
+                })}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onEdgeUpdate={onEdgeUpdate}
+                onEdgeUpdateStart={onEdgeUpdateStart}
+                onEdgeUpdateEnd={onEdgeUpdateEnd}
+                proOptions={proOptions}
+                onInit={setReactFlowInstance}
+                onPaneClick={handlePaneClick}
+              >
+                <Background
+                  variant={BackgroundVariant.Dots}
+                  className="bg-transparent"
+                  gap={12}
+                  size={1}
+                />
+                <Controls />
+                <MiniMap />
+              </ReactFlow>
+
+              <Toolbar
+                paletteOpen={paletteOpen}
+                pendingNode={pendingNode}
+                nextLabelIndex={nextLabelIndex}
+                GateList={GateList}
+                combinationalCircuits={combinationalGates}
+                onTogglePalette={handleTogglePalette}
+                onPaletteSelect={handlePaletteSelect}
+                onRemoveCombinational={removeCombinationalCircuit}
+                indexToLabel={indexToLabel}
+              />
+
+              <Library onAddCombinational={addCombinationalCircuit} />
+
+              {isLoaded && user && (
+                <div className="absolute top-6 right-6 z-50 flex flex-wrap items-center gap-3 justify-end">
+                  <button
+                    onClick={startNewCircuit}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 bg-white/10 text-white shadow-sm backdrop-blur hover:bg-white/15 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="text-sm font-medium">New Circuit</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowLibrary(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#7A7FEE]/30 bg-[#7A7FEE] text-white shadow-md hover:bg-[#6B73E8] transition-colors"
+                  >
+                    <FolderOpen className="w-4 h-4" />
+                    <span className="text-sm font-medium">My Circuits</span>
+                  </button>
+
+                  <button
+                    onClick={handleSaveButtonClick}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-400/30 bg-emerald-500 text-white shadow-md hover:bg-emerald-500/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-emerald-200/40 border-t-white rounded-full animate-spin" />
+                        <span className="text-sm font-medium">Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span className="text-sm font-medium">
+                          {currentCircuitId ? "Save" : "Save Circuit"}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                  <Link href="/dashboard">
+                    <button
+                      onClick={() => {
+                        setLoadingPage(true);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/15 transition-colors shadow-sm"
+                    >
+                      <User className="w-4 h-4 text-white/80" />
+                      <span className="text-sm text-white/90">
+                        {user.firstName || "Test User"}
+                      </span>
+                    </button>
+                  </Link>
+                </div>
+              )}
+
+              {loading && (
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-black/70 backdrop-blur-sm rounded-lg px-6 py-4 flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+                  <span className="text-white font-medium">Loading circuit...</span>
+                </div>
+              )}
             </div>
           </div>
-        )}
-
-        <ReactFlow
-          nodeTypes={nodeTypes}
-          nodes={nodes.map((node) => {
-            if (node.type === "ip") {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  value: outputValues[node.id + "-o"] ?? false,
-                  toggle: () => {
-                    setInputValues((prevState) => {
-                      return { ...prevState, [node.id]: !prevState[node.id] };
-                    });
-                  },
-                  remove: () => {
-                    setNodes((prev) => prev.filter((n) => n.id !== node.id));
-                    setEdges((prev) =>
-                      prev.filter(
-                        (edge) =>
-                          edge.source !== node.id && edge.target !== node.id
-                      )
-                    );
-                  },
-                },
-              };
-            }
-            if (node.type === "op") {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  value: outputValues[node.id + "-i"] ?? false,
-                  remove: () => {
-                    setNodes((prev) => prev.filter((n) => n.id !== node.id));
-                    setEdges((prev) =>
-                      prev.filter(
-                        (edge) =>
-                          edge.source !== node.id && edge.target !== node.id
-                      )
-                    );
-                  },
-                },
-              };
-            }
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                outputs: Object.fromEntries(
-                  Object.keys(node.data.outputs).map((i) => {
-                    return [
-                      i,
-                      {
-                        ...node.data.outputs[i],
-                        value: outputValues[node.id + "-o-" + i],
-                      },
-                    ];
-                  })
-                ),
-                inputvalues: Object.fromEntries(
-                  node.data.inputs.map((i: string) => {
-                    return [
-                      i,
-                      {
-                        ...node.data.inputs[i],
-                        value: outputValues[node.id + "-i-" + i],
-                      },
-                    ];
-                  })
-                ),
-                remove: () => {
-                  setNodes((prev) => prev.filter((n) => n.id !== node.id));
-                  setEdges((prev) =>
-                    prev.filter(
-                      (edge) =>
-                        edge.source !== node.id && edge.target !== node.id
-                    )
-                  );
-                },
-              },
-            };
-          })}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onEdgeUpdate={onEdgeUpdate}
-          onEdgeUpdateStart={onEdgeUpdateStart}
-          onEdgeUpdateEnd={onEdgeUpdateEnd}
-          proOptions={proOptions}
-          onInit={setReactFlowInstance}
-          onPaneClick={handlePaneClick}
-        >
-          <Background
-            variant={BackgroundVariant.Dots}
-            className="bg-[#353536]"
-            gap={12}
-            size={1}
-          />
-          <Controls />
-          <MiniMap />
-        </ReactFlow>
-      </div>
-      <Toolbar
-        paletteOpen={paletteOpen}
-        pendingNode={pendingNode}
-        nextLabelIndex={nextLabelIndex}
-        GateList={GateList}
-        combinationalCircuits={combinationalGates}
-        onTogglePalette={handleTogglePalette}
-        onPaletteSelect={handlePaletteSelect}
-        onRemoveCombinational={removeCombinationalCircuit}
-        indexToLabel={indexToLabel}
-      />
-
-      <Library onAddCombinational={addCombinationalCircuit} />
-
-      {/* User Actions */}
-      {isLoaded && user && (
-        <div className="absolute top-6 right-6 z-50 flex items-center gap-3">
-          <button
-            onClick={startNewCircuit}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-300 hover:bg-purple-500/30 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="text-sm font-medium">New Circuit</span>
-          </button>
-
-          <button
-            onClick={() => setShowLibrary(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-300 hover:bg-blue-500/30 transition-colors"
-          >
-            <FolderOpen className="w-4 h-4" />
-            <span className="text-sm font-medium">My Circuits</span>
-          </button>
-
-          <button
-            onClick={handleSaveButtonClick}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 hover:bg-emerald-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-                <span className="text-sm font-medium">Saving...</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                <span className="text-sm font-medium">
-                  {currentCircuitId ? "Save" : "Save Circuit"}
-                </span>
-              </>
-            )}
-          </button>
-          <Link href="/dashboard">
-            <button
-              onClick={() => {
-                setLoadingPage(true);
-              }}
-              className="flex items-center gap-2 px-3 py-2 bg-white/10 border-white/20 hover:bg-white/20 rounded-full"
-            >
-              <User className="w-4 h-4 text-white/70" />
-              <span className="text-sm text-white/90">
-                {user.firstName || "Test User"}
-              </span>
-            </button>
-          </Link>
         </div>
-      )}
+      </main>
 
-      {loading && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-black/80 backdrop-blur-sm rounded-lg px-6 py-4 flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-          <span className="text-white font-medium">Loading circuit...</span>
-        </div>
-      )}
+      <AuthModal open={showLogin} mode="signin" onClose={() => setShowLogin(false)} />
+      <AuthModal open={showRegister} mode="signup" onClose={() => setShowRegister(false)} />
+
       <SaveCircuitModal
         isOpen={showSaveModal}
         onClose={() => setShowSaveModal(false)}

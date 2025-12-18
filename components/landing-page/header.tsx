@@ -7,7 +7,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
-export default function Header() {
+type HeaderProps = {
+  onLoginClick?: () => void;
+  onRegisterClick?: () => void;
+};
+
+export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -93,18 +98,24 @@ export default function Header() {
               <div className="flex items-center space-x-4">
 
                 <div className="hidden md:flex items-center space-x-3">
-                  <Link
-                    href="/login"
+                  <button
+                    onClick={() => {
+                      if (onLoginClick) onLoginClick();
+                      else router.push("/login");
+                    }}
                     className="text-sm font-medium text-gray-300 hover:text-[#7A7FEE] transition-colors"
                   >
                     Log in
-                  </Link>
-                  <Link
-                    href="/register"
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (onRegisterClick) onRegisterClick();
+                      else router.push("/register");
+                    }}
                     className="bg-[#7A7FEE] text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-[#6B73E8] transition-colors shadow-sm"
                   >
                     Register
-                  </Link>
+                  </button>
                 </div>
 
                 <button
@@ -156,20 +167,26 @@ export default function Header() {
               </nav>
 
               <div className="p-6 border-t border-gray-700 space-y-3">
-                <Link
-                  href="/login"
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    if (onLoginClick) onLoginClick();
+                    else router.push("/login");
+                  }}
                   className="block w-full text-center py-3 text-sm font-medium text-gray-300 hover:text-[#7A7FEE] transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
                 >
                   Log in
-                </Link>
-                <Link
-                  href="/register"
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    if (onRegisterClick) onRegisterClick();
+                    else router.push("/register");
+                  }}
                   className="block w-full text-center py-3 bg-[#7A7FEE] text-white rounded-lg text-sm font-medium hover:bg-[#6B73E8] transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
                 >
                   Register
-                </Link>
+                </button>
               </div>
             </div>
           </div>

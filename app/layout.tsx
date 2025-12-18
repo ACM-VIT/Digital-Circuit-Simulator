@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Outfit } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -81,9 +82,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={outfit.className}>
-               <ThemeProvider>
-          {children}
-        </ThemeProvider>
+        <ClerkProvider>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

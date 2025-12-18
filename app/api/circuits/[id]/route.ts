@@ -4,9 +4,10 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getServerUser()
     
     if (!user) {
@@ -15,7 +16,7 @@ export async function GET(
 
     const circuit = await prisma.circuit.findFirst({
       where: {
-        id: params.id,
+        id,
         clerk_user_id: user.clerk_user_id
       },
       include: {
@@ -45,9 +46,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getServerUser()
     
     if (!user) {
@@ -60,7 +62,7 @@ export async function PUT(
     // Check if circuit exists and belongs to user
     const existingCircuit = await prisma.circuit.findFirst({
       where: {
-        id: params.id,
+        id,
         clerk_user_id: user.clerk_user_id
       }
     })
@@ -73,7 +75,7 @@ export async function PUT(
     const circuit = await prisma.$transaction(async (tx: any) => {
       // Update circuit
       const updatedCircuit = await tx.circuit.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           name,
           description,
@@ -84,13 +86,13 @@ export async function PUT(
 
       // Update categories
       await tx.circuitCategory.deleteMany({
-        where: { circuit_id: params.id }
+        where: { circuit_id: id }
       })
 
       if (category_ids.length > 0) {
         await tx.circuitCategory.createMany({
           data: category_ids.map((category_id: string) => ({
-            circuit_id: params.id,
+            circuit_id: id,
             category_id
           }))
         })
@@ -98,13 +100,13 @@ export async function PUT(
 
       // Update labels
       await tx.circuitLabel.deleteMany({
-        where: { circuit_id: params.id }
+        where: { circuit_id: id }
       })
 
       if (label_ids.length > 0) {
         await tx.circuitLabel.createMany({
           data: label_ids.map((label_id: string) => ({
-            circuit_id: params.id,
+            circuit_id: id,
             label_id
           }))
         })
@@ -122,9 +124,10 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getServerUser()
     
     if (!user) {
@@ -137,7 +140,7 @@ export async function PATCH(
     // Check if circuit exists and belongs to user
     const existingCircuit = await prisma.circuit.findFirst({
       where: {
-        id: params.id,
+        id,
         clerk_user_id: user.clerk_user_id
       }
     })
@@ -151,13 +154,13 @@ export async function PATCH(
       if (category_ids !== undefined) {
         // Update categories
         await tx.circuitCategory.deleteMany({
-          where: { circuit_id: params.id }
+          where: { circuit_id: id }
         })
 
         if (category_ids.length > 0) {
           await tx.circuitCategory.createMany({
             data: category_ids.map((category_id: string) => ({
-              circuit_id: params.id,
+              circuit_id: id,
               category_id
             }))
           })
@@ -167,13 +170,13 @@ export async function PATCH(
       if (label_ids !== undefined) {
         // Update labels
         await tx.circuitLabel.deleteMany({
-          where: { circuit_id: params.id }
+          where: { circuit_id: id }
         })
 
         if (label_ids.length > 0) {
           await tx.circuitLabel.createMany({
             data: label_ids.map((label_id: string) => ({
-              circuit_id: params.id,
+              circuit_id: id,
               label_id
             }))
           })
@@ -183,7 +186,7 @@ export async function PATCH(
 
     // Fetch and return updated circuit
     const updatedCircuit = await prisma.circuit.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         categories: {
           include: {
@@ -207,9 +210,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getServerUser()
     
     if (!user) {
@@ -219,7 +223,7 @@ export async function DELETE(
     // Check if circuit exists and belongs to user
     const existingCircuit = await prisma.circuit.findFirst({
       where: {
-        id: params.id,
+        id,
         clerk_user_id: user.clerk_user_id
       }
     })
@@ -229,7 +233,7 @@ export async function DELETE(
     }
 
     await prisma.circuit.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ message: 'Circuit deleted successfully' })

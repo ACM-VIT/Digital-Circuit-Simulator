@@ -4,9 +4,10 @@ import { prisma } from '@/lib/prisma'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getServerUser()
     
     if (!user) {
@@ -16,7 +17,7 @@ export async function DELETE(
     // Check if category exists and belongs to user
     const existingCategory = await prisma.category.findFirst({
       where: {
-        id: params.id,
+        id,
         clerk_user_id: user.clerk_user_id
       }
     })
@@ -27,7 +28,7 @@ export async function DELETE(
 
     // Delete category (cascade will handle CircuitCategory relations)
     await prisma.category.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ message: 'Category deleted successfully' })
@@ -39,9 +40,10 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getServerUser()
     
     if (!user) {
@@ -54,7 +56,7 @@ export async function PATCH(
     // Check if category exists and belongs to user
     const existingCategory = await prisma.category.findFirst({
       where: {
-        id: params.id,
+        id,
         clerk_user_id: user.clerk_user_id
       }
     })
@@ -65,7 +67,7 @@ export async function PATCH(
 
     // Update category
     const updatedCategory = await prisma.category.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(name && { name }),
         ...(color && { color }),

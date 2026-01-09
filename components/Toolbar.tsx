@@ -24,6 +24,7 @@ interface ToolbarProps {
   onTogglePalette: () => void;
   onPaletteSelect: (type: string, gate?: GateType) => void;
   onRemoveCombinational?: (circuitName: string) => void;
+  onImportCircuit?: () => void;
   indexToLabel: (index: number) => string;
 }
 
@@ -73,6 +74,11 @@ const toolbarConfig = {
     icon: Cpu,
     items: [],
   },
+  "Import Circuit": {
+    type: "import",
+    icon: CircuitBoard,
+    items: [],
+  },
 };
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -84,6 +90,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onTogglePalette,
   onPaletteSelect,
   onRemoveCombinational,
+  onImportCircuit,
   indexToLabel,
 }) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -101,6 +108,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
         color: circuit.color,
         icon: GitBranch,
       })),
+    },
+    "Import Circuit": {
+      type: "import",
+      icon: CircuitBoard,
+      items: [],
     },
   };
 
@@ -136,11 +148,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
   }, [paletteOpen]);
 
   const handleCategoryClick = (category: string) => {
-    if (isMobile) {
-      setActiveCategory(activeCategory === category ? null : category);
-    } else {
-      setActiveCategory(category);
-    }
+    // Toggle the dropdown - if already open, close it
+    setActiveCategory(activeCategory === category ? null : category);
   };
 
   const handleCategoryHover = (category: string) => {
@@ -342,7 +351,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     type="button"
-                    onClick={() => handleCategoryClick(category)}
+                    onClick={() => {
+                      if (category === "Import Circuit" && onImportCircuit) {
+                        onImportCircuit();
+                      } else {
+                        handleCategoryClick(category);
+                      }
+                    }}
                     onMouseEnter={() => handleCategoryHover(category)}
                     className={`w-full rounded-lg border px-4 py-3 text-left font-semibold transition-all ${
                       activeCategory === category
@@ -358,22 +373,24 @@ const Toolbar: React.FC<ToolbarProps> = ({
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <motion.span
-                          animate={{
-                            rotate: activeCategory === category ? 180 : 0,
-                          }}
-                          transition={{ duration: 0.2 }}
-                          className="text-xs"
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </motion.span>
+                        {category !== "Import Circuit" && (
+                          <motion.span
+                            animate={{
+                              rotate: activeCategory === category ? 180 : 0,
+                            }}
+                            transition={{ duration: 0.2 }}
+                            className="text-xs"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </motion.span>
+                        )}
                       </div>
                     </div>
                   </motion.button>
 
                   {/* Sub-items Dropdown */}
                   <AnimatePresence>
-                    {activeCategory === category && (
+                    {activeCategory === category && category !== "Import Circuit" && (
                       <motion.div
                         variants={dropdownVariants}
                         initial="hidden"

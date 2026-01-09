@@ -135,7 +135,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { category_ids, label_ids } = body
+    const { category_ids, label_ids, name, description } = body
 
     // Check if circuit exists and belongs to user
     const existingCircuit = await prisma.circuit.findFirst({
@@ -149,8 +149,20 @@ export async function PATCH(
       return NextResponse.json({ error: 'Circuit not found' }, { status: 404 })
     }
 
-    // Update only categories and/or labels
+    // Update circuit fields, categories and/or labels
     await prisma.$transaction(async (tx: any) => {
+      // Update name and/or description if provided
+      if (name !== undefined || description !== undefined) {
+        const updateData: any = {}
+        if (name !== undefined) updateData.name = name
+        if (description !== undefined) updateData.description = description
+        
+        await tx.circuit.update({
+          where: { id },
+          data: updateData
+        })
+      }
+
       if (category_ids !== undefined) {
         // Update categories
         await tx.circuitCategory.deleteMany({

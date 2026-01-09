@@ -16,6 +16,8 @@ function Output(props: NodeProps) {
     return (
         <div
             className={`relative flex h-[125px] w-[125px] min-w-[115px] flex-col items-center justify-center gap-2.5 rounded-full border border-[#274060] px-4 py-4 text-white shadow-[0_9px_20px_rgba(0,0,0,0.4)] ${moghul.className}`}
+            onContextMenu={(e) => data?.onContextMenu?.(e)}
+            onDoubleClick={(e) => data?.onDoubleClick?.(e)}
             style={{
                 background: isOn
                     ? 'linear-gradient(160deg, #233a63 0%, #0f1b33 65%, #080b13 100%)'
@@ -25,14 +27,6 @@ function Output(props: NodeProps) {
                     : '0 10px 22px rgba(0, 0, 0, 0.45)'
             }}
         >
-            <button
-                type="button"
-                onClick={() => data?.remove?.()}
-                className="nodrag absolute left-1.5 top-1.5 rounded-full border border-white/10 bg-black/60 p-1 transition hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
-                aria-label="Delete output node"
-            >
-                <Image src="/trash.svg" alt="Delete" width={14} height={14} className="filter invert" />
-            </button>
             <span className="text-[9px] uppercase tracking-[0.35em] text-emerald-200/80">Output</span>
             <Image
                 src={isOn ? '/bulbon.svg' : '/bulboff.svg'}
@@ -40,7 +34,15 @@ function Output(props: NodeProps) {
                 width={46}
                 height={46}
             />
-            <span className="text-xs font-semibold tracking-[0.25em] text-emerald-100/90">{data?.label}</span>
+            <span 
+                className="text-xs font-semibold tracking-[0.25em] text-emerald-100/90 cursor-pointer hover:text-emerald-50 transition-colors"
+                onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    data?.editLabel?.();
+                }}
+            >
+                {data?.label}
+            </span>
             <div className="absolute left-[-18px] top-1/2 -translate-y-1/2">
                 <Target
                     truth={isOn}

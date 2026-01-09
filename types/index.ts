@@ -5,6 +5,9 @@ export interface GateType {
   inputs?: string[];
   outputs: { [key: string]: string };
   circuit?: { gates: GateType[]; wires: Wire[] };
+  isCombinational?: boolean;
+  isImported?: boolean;
+  importedCircuitId?: string;
 }
 
 export interface Wire {

@@ -85,9 +85,9 @@ export function AuthModal({ open, mode, onClose }: AuthModalProps) {
 
             <div className="relative">
               {mode === "signin" ? (
-                <SignIn path="/login" routing="path" afterSignInUrl="/dashboard" appearance={authAppearance} />
+                <SignIn routing="hash" afterSignInUrl="/dashboard" appearance={authAppearance} />
               ) : (
-                <SignUp path="/register" routing="path" afterSignUpUrl="/dashboard" appearance={authAppearance} />
+                <SignUp routing="hash" afterSignUpUrl="/dashboard" appearance={authAppearance} />
               )}
             </div>
           </div>

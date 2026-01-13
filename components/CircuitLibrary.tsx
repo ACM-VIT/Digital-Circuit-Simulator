@@ -30,8 +30,8 @@ interface Circuit {
   is_public: boolean;
   created_at: string;
   updated_at: string;
-  categories: Array<{ category: { name: string; color: string } }>;
-  labels: Array<{ label: { name: string; color: string } }>;
+  categories: Array<{ category: { id?: string; name: string; color: string } }>;
+  labels: Array<{ label: { id?: string; name: string; color: string } }>;
 }
 
 interface CircuitLibraryProps {

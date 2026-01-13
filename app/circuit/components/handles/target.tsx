@@ -15,14 +15,16 @@ const Target = (props: any) => {
 
     }, [edges, props.id]);
 
+    const { truth, style, ...restProps } = props;
+
     return (
-        <Handle {...props} isConnectable={isHandleConnectable} type="target" position={Position.Left} style={{
+        <Handle {...restProps} isConnectable={isHandleConnectable} type="target" position={Position.Left} style={{
             height: '15px',
             width: '15px',
-            background: props.truth? 'red':'gray',
+            background: truth ? 'red' : 'gray',
             borderWidth: '2px',
             borderColor: 'black',
-            ...props.style ?? {}
+            ...style ?? {}
         }}
         ></Handle>
     );

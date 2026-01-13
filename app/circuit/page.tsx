@@ -42,6 +42,7 @@ import { LabelEditModal } from "@/components/LabelEditModal";
 import { NodeContextMenu } from "@/components/NodeContextMenu";
 import ImportCircuitModal from "@/components/ImportCircuitModal";
 import InputCountModal from "@/components/InputCountModal";
+import RenameModal from "@/components/RenameModal";
 import { useUser } from "@clerk/nextjs";
 import { Save, FolderOpen, User, Plus, Maximize2, Minimize2, History, Undo, Redo, X } from "lucide-react";
 import UserSync from "@/components/UserSync";
@@ -131,7 +132,11 @@ const GateList: GateType[] = [
 
 const proOptions = { hideAttribution: true };
 
-function CircuitMaker() {
+interface CircuitMakerProps {
+  initialCircuitId?: string | null;
+}
+
+function CircuitMaker({ initialCircuitId }: CircuitMakerProps = {}) {
   const reactFlowWrapper = useRef(null);
 
   const edgeUpdateSuccessful = useRef(true);
@@ -177,6 +182,12 @@ function CircuitMaker() {
     nodeType: "input" | "output" | "gate";
   } | null>(null);
 
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [currentCircuitName, setCurrentCircuitName] = useState("Untitled Circuit");
+  const [currentCircuitDescription, setCurrentCircuitDescription] = useState("");
+  const [currentCategoryIds, setCurrentCategoryIds] = useState<string[]>([]);
+  const [currentLabelIds, setCurrentLabelIds] = useState<string[]>([]);
+
   const [contextMenu, setContextMenu] = useState<{
     nodeId: string;
     x: number;
@@ -185,9 +196,9 @@ function CircuitMaker() {
 
   const [copiedNodes, setCopiedNodes] = useState<Node[]>([]);
   const [copiedEdges, setCopiedEdges] = useState<Edge[]>([]);
-  
+
   const [showImportModal, setShowImportModal] = useState(false);
-  
+
   const [inputCountModal, setInputCountModal] = useState<{
     nodeId: string;
     currentCount: number;
@@ -238,7 +249,7 @@ function CircuitMaker() {
         if (node.id === nodeId && node.type === "gate") {
           const gateType = node.data.gateType || node.data.name;
           const newInputs = generateInputLabels(newCount, gateType);
-          
+
           // Update the gate's logic expression based on gate type and input count
           let outputExpression = "";
           switch (gateType.toUpperCase()) {
@@ -296,10 +307,10 @@ function CircuitMaker() {
     const outputNodes = circuitNodes.filter((n: any) => n.type === 'op');
 
     // Create inputs and outputs arrays with labels
-    const inputs = inputNodes.map((node: any, index: number) => 
+    const inputs = inputNodes.map((node: any, index: number) =>
       node.data?.label || `in${index + 1}`
     );
-    const outputs = outputNodes.map((node: any, index: number) => 
+    const outputs = outputNodes.map((node: any, index: number) =>
       node.data?.label || `out${index + 1}`
     );
 
@@ -507,17 +518,17 @@ function CircuitMaker() {
       if (event.key === 'Delete' || event.key === 'Backspace') {
         const selectedNodes = nodes.filter((node) => node.selected);
         const selectedEdges = edges.filter((edge) => edge.selected);
-        
+
         if (selectedNodes.length > 0 || selectedEdges.length > 0) {
           event.preventDefault();
-          
+
           const selectedNodeIds = selectedNodes.map((n) => n.id);
-          
+
           // Remove selected nodes
           if (selectedNodes.length > 0) {
             setNodes((nds) => nds.filter((n) => !selectedNodeIds.includes(n.id)));
           }
-          
+
           // Remove edges connected to deleted nodes and selected edges
           setEdges((eds) =>
             eds.filter(
@@ -527,7 +538,7 @@ function CircuitMaker() {
                 !edge.selected
             )
           );
-          
+
           const deletedCount = [];
           if (selectedNodes.length > 0) deletedCount.push(`${selectedNodes.length} node(s)`);
           if (selectedEdges.length > 0) deletedCount.push(`${selectedEdges.length} wire(s)`);
@@ -593,7 +604,7 @@ function CircuitMaker() {
       const lastNodes = lastHistory?.nodes || [];
       const lastEdges = lastHistory?.edges || [];
       let shouldReplaceLastHistory = false;
-      
+
       // Check for node changes
       if (nodes.length > lastNodes.length) {
         const newNode = nodes.find(n => !lastNodes.some(ln => ln.id === n.id));
@@ -622,7 +633,7 @@ function CircuitMaker() {
         if (movedNode) {
           const nodeLabel = movedNode.data.label || movedNode.data.name || movedNode.data.gateType || 'node';
           action = `Moved ${nodeLabel}`;
-          
+
           // Check if last action was also moving the same node
           if (lastHistory?.action?.startsWith(`Moved ${nodeLabel}`)) {
             shouldReplaceLastHistory = true;
@@ -638,7 +649,7 @@ function CircuitMaker() {
           }
         }
       }
-      
+
       // Check for edge changes
       if (edges.length > lastEdges.length && action === 'Modified circuit') {
         action = 'Connected wires';
@@ -648,7 +659,7 @@ function CircuitMaker() {
 
       // Remove any "future" history if we're not at the end
       const newHistory = history.slice(0, currentHistoryIndex + 1);
-      
+
       if (shouldReplaceLastHistory) {
         // Replace the last history entry instead of adding a new one
         newHistory[newHistory.length - 1] = { nodes, edges, action };
@@ -656,7 +667,7 @@ function CircuitMaker() {
       } else {
         // Add new state
         newHistory.push({ nodes, edges, action });
-        
+
         // Limit history size to 50 steps
         if (newHistory.length > 50) {
           newHistory.shift();
@@ -727,12 +738,99 @@ function CircuitMaker() {
   }, [nodes, edges, setNodes, setEdges]);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const circuitId = urlParams.get("load");
-    if (circuitId && user) {
-      loadCircuitFromUrl(circuitId);
+    if (initialCircuitId && user) {
+      loadCircuitFromUrl(initialCircuitId);
+    } else {
+      const urlParams = new URLSearchParams(window.location.search);
+      const circuitId = urlParams.get("load");
+      if (circuitId && user) {
+        loadCircuitFromUrl(circuitId);
+      }
     }
-  }, [user]);
+  }, [user, initialCircuitId]);
+
+  // Auto-save debounced effect
+  useEffect(() => {
+    if (!currentCircuitId || !user) return;
+
+    const timer = setTimeout(() => {
+      autoSaveCircuit();
+    }, 3000); // 3 seconds debounced auto-save
+
+    return () => clearTimeout(timer);
+  }, [nodes, edges, currentCircuitName, currentCircuitDescription]);
+
+  const autoSaveCircuit = async () => {
+    if (!currentCircuitId || saving) return;
+
+    try {
+      const nodesWithCurrentValues = nodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          value:
+            node.type === "ip"
+              ? inputValues[node.id]
+              : node.type === "op"
+                ? outputValues[node.id]
+                : node.data.value,
+        },
+      }));
+
+      const circuitData = {
+        nodes: nodesWithCurrentValues,
+        edges,
+        viewport: reactFlowInstance?.getViewport() || { x: 0, y: 0, zoom: 1 },
+        inputValues,
+        outputValues,
+      };
+
+      await fetch(`/api/circuits/${currentCircuitId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: currentCircuitName,
+          description: currentCircuitDescription,
+          circuit_data: circuitData,
+        }),
+      });
+      console.log("Auto-save successful");
+    } catch (error) {
+      console.error("Auto-save failed:", error);
+    }
+  };
+
+  const handleRenameCircuit = async (newName: string, newDescription?: string) => {
+    if (currentCircuitId) {
+      try {
+        const response = await fetch(`/api/circuits/${currentCircuitId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: newName,
+            description: newDescription,
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to rename circuit");
+
+        const updated = await response.json();
+        setCurrentCircuitName(updated.name);
+        setCurrentCircuitDescription(updated.description || "");
+        toast.success("Circuit renamed");
+      } catch (error) {
+        toast.error("Failed to rename circuit");
+      }
+    } else {
+      setCurrentCircuitName(newName);
+      setCurrentCircuitDescription(newDescription || "");
+      toast.success("Name updated (will be saved with circuit)");
+    }
+  };
 
   const updateUrlWithCircuitId = (circuitId: string) => {
     const newUrl = `/circuit/${circuitId}`;
@@ -831,7 +929,7 @@ function CircuitMaker() {
   const onEdgeClick = useCallback(
     (event: React.MouseEvent, edge: Edge) => {
       event.stopPropagation();
-      
+
       if (!reactFlowInstance) return;
 
       // Get click position in flow coordinates
@@ -884,7 +982,7 @@ function CircuitMaker() {
       // Add the branch node and new edges
       setNodes((nds) => [...nds, newBranchNode]);
       setEdges((eds) => [...eds, edge1, edge2]);
-      
+
       toast.success("Branch point created");
     },
     [reactFlowInstance, setNodes, setEdges, handleContextMenu]
@@ -1119,8 +1217,8 @@ function CircuitMaker() {
             node.type === "ip"
               ? inputValues[node.id]
               : node.type === "op"
-              ? outputValues[node.id]
-              : node.data.value,
+                ? outputValues[node.id]
+                : node.data.value,
         },
       }));
 
@@ -1154,6 +1252,10 @@ function CircuitMaker() {
       // If it's a new circuit, set the current circuit ID and update URL
       if (!currentCircuitId && savedCircuit.id) {
         setCurrentCircuitId(savedCircuit.id);
+        setCurrentCircuitName(savedCircuit.name);
+        setCurrentCircuitDescription(savedCircuit.description || "");
+        setCurrentCategoryIds(savedCircuit.categories?.map((c: any) => c.category_id || c.category?.id) || []);
+        setCurrentLabelIds(savedCircuit.labels?.map((l: any) => l.label_id || l.label?.id) || []);
         updateUrlWithCircuitId(savedCircuit.id);
       }
 
@@ -1183,8 +1285,8 @@ function CircuitMaker() {
               node.type === "ip"
                 ? inputValues[node.id]
                 : node.type === "op"
-                ? outputValues[node.id]
-                : node.data.value,
+                  ? outputValues[node.id]
+                  : node.data.value,
           },
         }));
 
@@ -1231,6 +1333,10 @@ function CircuitMaker() {
 
       updateUrlWithCircuitId(circuit.id);
       setCurrentCircuitId(circuit.id);
+      setCurrentCircuitName(circuit.name);
+      setCurrentCircuitDescription(circuit.description || "");
+      setCurrentCategoryIds(circuit.categories?.map((c: any) => c.category_id || c.category?.id) || []);
+      setCurrentLabelIds(circuit.labels?.map((l: any) => l.label_id || l.label?.id) || []);
 
       const transformedNodes =
         circuitData.nodes?.map((node: any) => ({
@@ -1506,6 +1612,14 @@ function CircuitMaker() {
                   </button>
 
                   <button
+                    onClick={() => setShowRenameModal(true)}
+                    className="flex flex-col items-start px-4 py-1.5 rounded-xl border border-white/15 bg-white/5 text-white shadow-sm backdrop-blur hover:bg-white/10 transition-colors max-w-[200px]"
+                  >
+                    <span className="text-[10px] uppercase tracking-wider text-white/50">Current Circuit</span>
+                    <span className="text-sm font-semibold truncate w-full text-left">{currentCircuitName}</span>
+                  </button>
+
+                  <button
                     onClick={startNewCircuit}
                     className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 bg-white/10 text-white shadow-sm backdrop-blur hover:bg-white/15 transition-colors"
                   >
@@ -1622,11 +1736,11 @@ function CircuitMaker() {
                       <div className="p-2">
                         {history.map((state, index) => {
                           if (index === 0 && state.nodes.length === 0) return null;
-                          
+
                           const nodeCount = state.nodes.length;
                           const edgeCount = state.edges.length;
                           const isCurrent = index === currentHistoryIndex;
-                          
+
                           return (
                             <button
                               key={index}
@@ -1639,18 +1753,16 @@ function CircuitMaker() {
                                   toast.success(`Jumped to: ${state.action}`);
                                 }
                               }}
-                              className={`w-full text-left p-3 rounded-lg mb-1 transition-colors ${
-                                isCurrent
-                                  ? 'bg-emerald-500/20 border border-emerald-500/50'
-                                  : 'hover:bg-white/5 border border-transparent'
-                              }`}
+                              className={`w-full text-left p-3 rounded-lg mb-1 transition-colors ${isCurrent
+                                ? 'bg-emerald-500/20 border border-emerald-500/50'
+                                : 'hover:bg-white/5 border border-transparent'
+                                }`}
                             >
                               <div className="flex items-center justify-between">
-                                <span className={`font-medium text-sm ${
-                                  isCurrent
-                                    ? 'text-emerald-400'
-                                    : 'text-white'
-                                }`}>
+                                <span className={`font-medium text-sm ${isCurrent
+                                  ? 'text-emerald-400'
+                                  : 'text-white'
+                                  }`}>
                                   {state.action}
                                   {isCurrent && ' •'}
                                 </span>
@@ -1770,13 +1882,13 @@ function CircuitMaker() {
         onLoadCircuit={handleLoadCircuit}
         currentCircuitId={currentCircuitId || undefined}
       />
-      
+
       <ImportCircuitModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onImport={handleImportCircuitAsBlock}
       />
-      
+
       <ConfirmationModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
@@ -1787,7 +1899,7 @@ function CircuitMaker() {
         cancelText="Cancel"
         confirmButtonColor="bg-purple-500 hover:bg-purple-600"
       />
-      
+
       {inputCountModal && (
         <InputCountModal
           isOpen={true}
@@ -1800,6 +1912,16 @@ function CircuitMaker() {
           }}
         />
       )}
+
+      <RenameModal
+        isOpen={showRenameModal}
+        onClose={() => setShowRenameModal(false)}
+        onSave={handleRenameCircuit}
+        currentName={currentCircuitName}
+        currentDescription={currentCircuitDescription}
+        itemType="circuit"
+        title="Rename Circuit"
+      />
     </ReactFlowProvider>
   );
 }

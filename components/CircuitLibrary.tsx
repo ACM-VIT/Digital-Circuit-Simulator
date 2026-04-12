@@ -30,8 +30,8 @@ interface Circuit {
   is_public: boolean;
   created_at: string;
   updated_at: string;
-  categories: Array<{ category: { name: string; color: string } }>;
-  labels: Array<{ label: { name: string; color: string } }>;
+  categories: Array<{ category: { id?: string; name: string; color: string } }>;
+  labels: Array<{ label: { id?: string; name: string; color: string } }>;
 }
 
 interface CircuitLibraryProps {
@@ -156,14 +156,14 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
 
   const shareCircuit = async (circuitId: string) => {
     try {
-      const circuitUrl = `${window.location.origin}/circuit?load=${circuitId}`;
+      const circuitUrl = `${window.location.origin}/circuit/${circuitId}`;
       await navigator.clipboard.writeText(circuitUrl);
       setCopiedCircuitId(circuitId);
       setTimeout(() => setCopiedCircuitId(null), 2000);
     } catch (error) {
       console.error('Error copying circuit URL:', error);
       const textArea = document.createElement('textarea');
-      textArea.value = `${window.location.origin}/circuit?load=${circuitId}`;
+      textArea.value = `${window.location.origin}/circuit/${circuitId}`;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
@@ -194,14 +194,17 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
   if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        onClick={onClose}
-      >
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            key="circuit-library-modal"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={onClose}
+        >
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -403,9 +406,9 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
                     {/* Categories */}
                     {circuit.categories.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-2">
-                        {circuit.categories.map((cat, index) => (
+                        {circuit.categories.map((cat, idx) => (
                           <span
-                            key={index}
+                            key={`${circuit.id}-cat-${cat.category.id || cat.category.name || 'cat'}-${idx}`}
                             className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs"
                             style={{ 
                               backgroundColor: `${cat.category.color}20`,
@@ -422,9 +425,9 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
                     {/* Labels */}
                     {circuit.labels.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        {circuit.labels.map((label, index) => (
+                        {circuit.labels.map((label, idx) => (
                           <span
-                            key={index}
+                            key={`${circuit.id}-label-${label.label.id || label.label.name || 'label'}-${idx}`}
                             className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs"
                             style={{ 
                               backgroundColor: `${label.label.color}20`,
@@ -444,29 +447,31 @@ const CircuitLibrary: React.FC<CircuitLibraryProps> = ({
           </div>
         </motion.div>
       </motion.div>
-
-      {/* Category Modal */}
-      <CategoryModal
-        isOpen={showCategoryModal}
-        onClose={() => setShowCategoryModal(false)}
-        onSave={createCategory}
-        title="Create Category"
-      />
-
-      {/* Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={!!confirmDelete}
-        onClose={() => setConfirmDelete(null)}
-        onConfirm={() => {
-          if (confirmDelete) {
-            deleteCircuit(confirmDelete);
-            setConfirmDelete(null);
-          }
-        }}
-        title="Delete Circuit"
-        message="Are you sure you want to delete this circuit? This action cannot be undone."
-      />
+      )}
     </AnimatePresence>
+
+    {/* Category Modal */}
+    <CategoryModal
+      isOpen={showCategoryModal}
+      onClose={() => setShowCategoryModal(false)}
+      onSave={createCategory}
+      title="Create Category"
+    />
+
+    {/* Confirmation Modal */}
+    <ConfirmationModal
+      isOpen={!!confirmDelete}
+      onClose={() => setConfirmDelete(null)}
+      onConfirm={() => {
+        if (confirmDelete) {
+          deleteCircuit(confirmDelete);
+          setConfirmDelete(null);
+        }
+      }}
+      title="Delete Circuit"
+      message="Are you sure you want to delete this circuit? This action cannot be undone."
+    />
+    </>
   );
 };
 

@@ -23,6 +23,8 @@ import Link from "next/link";
 import Loader from "@/components/Loader";
 import CategoryModal from "@/components/CategoryModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { DashboardContextMenu } from "@/components/DashboardContextMenu";
+import RenameModal from "@/components/RenameModal";
 
 interface Circuit {
   id: string;
@@ -63,6 +65,19 @@ export default function Dashboard() {
   const [confirmDelete, setConfirmDelete] = useState<{
     type: "circuit" | "category";
     id: string;
+  } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    type: "circuit" | "category";
+    id: string;
+    name: string;
+  } | null>(null);
+  const [renameModal, setRenameModal] = useState<{
+    type: "circuit" | "category";
+    id: string;
+    name: string;
+    description?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -170,6 +185,91 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Error deleting category:", error);
       toast.error("Error deleting category");
+    }
+  };
+
+  const renameCircuit = async (circuitId: string, newName: string, newDescription?: string) => {
+    try {
+      const response = await fetch(`/api/circuits/${circuitId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName, description: newDescription }),
+      });
+
+      if (response.ok) {
+        const updatedCircuit = await response.json();
+        setCircuits((prev) =>
+          prev.map((c) => (c.id === circuitId ? updatedCircuit : c))
+        );
+        toast.success("Circuit renamed successfully!");
+      } else {
+        toast.error("Failed to rename circuit");
+      }
+    } catch (error) {
+      console.error("Error renaming circuit:", error);
+      toast.error("Error renaming circuit");
+      throw error;
+    }
+  };
+
+  const renameCategory = async (categoryId: string, newName: string) => {
+    try {
+      const response = await fetch(`/api/categories/${categoryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName }),
+      });
+
+      if (response.ok) {
+        const updatedCategory = await response.json();
+        setCategories((prev) =>
+          prev.map((c) => (c.id === categoryId ? updatedCategory : c))
+        );
+        // Reload circuits to update their category names
+        loadData();
+        toast.success("Category renamed successfully!");
+      } else {
+        toast.error("Failed to rename category");
+      }
+    } catch (error) {
+      console.error("Error renaming category:", error);
+      toast.error("Error renaming category");
+      throw error;
+    }
+  };
+
+  const duplicateCircuit = async (circuitId: string) => {
+    try {
+      const circuit = circuits.find((c) => c.id === circuitId);
+      if (!circuit) return;
+
+      const response = await fetch("/api/circuits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${circuit.name} (Copy)`,
+          description: circuit.description,
+          circuit_data: circuit,
+          is_public: circuit.is_public,
+          category_ids: circuit.categories.map((c) => 
+            categories.find((cat) => cat.name === c.category.name)?.id
+          ).filter(Boolean),
+          label_ids: circuit.labels.map((l) => 
+            labels.find((lab) => lab.name === l.label.name)?.id
+          ).filter(Boolean),
+        }),
+      });
+
+      if (response.ok) {
+        const newCircuit = await response.json();
+        setCircuits((prev) => [newCircuit, ...prev]);
+        toast.success("Circuit duplicated successfully!");
+      } else {
+        toast.error("Failed to duplicate circuit");
+      }
+    } catch (error) {
+      console.error("Error duplicating circuit:", error);
+      toast.error("Error duplicating circuit");
     }
   };
 
@@ -406,7 +506,17 @@ export default function Dashboard() {
               {categories.map((category) => (
                 <div
                   key={category.id}
-                  className="relative group bg-black/40 border border-white/10 rounded-lg p-3 hover:bg-black/60 transition-colors"
+                  className="relative group bg-black/40 border border-white/10 rounded-lg p-3 hover:bg-black/60 transition-colors cursor-context-menu"
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({
+                      x: e.clientX,
+                      y: e.clientY,
+                      type: "category",
+                      id: category.id,
+                      name: category.name,
+                    });
+                  }}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <div
@@ -427,15 +537,6 @@ export default function Dashboard() {
                     }{" "}
                     circuits
                   </p>
-                  <button
-                    onClick={() =>
-                      setConfirmDelete({ type: "category", id: category.id })
-                    }
-                    className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded transition-all"
-                    title="Delete category"
-                  >
-                    <Trash2 className="w-3 h-3 text-red-400" />
-                  </button>
                 </div>
               ))}
             </div>
@@ -475,43 +576,29 @@ export default function Dashboard() {
                 key={circuit.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-black/40 border border-white/10 rounded-xl p-6 hover:bg-black/60 transition-colors group relative"
+                className="bg-black/40 border border-white/10 rounded-xl p-6 hover:bg-black/60 transition-colors group relative cursor-context-menu"
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setContextMenu({
+                    x: e.clientX,
+                    y: e.clientY,
+                    type: "circuit",
+                    id: circuit.id,
+                    name: circuit.name,
+                  });
+                }}
+                onClick={(e) => {
+                  // Allow clicking to load circuit (but not on right-click)
+                  if (e.button === 0) {
+                    setLoadingPage(true);
+                    window.location.href = `/circuit/${circuit.id}`;
+                  }
+                }}
               >
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="font-semibold text-white truncate">
                     {circuit.name}
                   </h3>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() =>
-                        setMovingCircuitId(
-                          movingCircuitId === circuit.id ? null : circuit.id
-                        )
-                      }
-                      className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors"
-                      title="Move to category"
-                    >
-                      <Move className="w-4 h-4 text-blue-400" />
-                    </button>
-                    <Link href={`/circuit?load=${circuit.id}`}>
-                      <button
-                        className="p-2 hover:bg-emerald-500/20 rounded-lg transition-colors"
-                        title="Load circuit"
-                        onClick={() => setLoadingPage(true)}
-                      >
-                        <Play className="w-4 h-4 text-emerald-400" />
-                      </button>
-                    </Link>
-                    <button
-                      onClick={() =>
-                        setConfirmDelete({ type: "circuit", id: circuit.id })
-                      }
-                      className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
-                      title="Delete circuit"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </button>
-                  </div>
                 </div>
 
                 {/* Move to Category Dropdown */}
@@ -664,6 +751,60 @@ export default function Dashboard() {
             : "Are you sure you want to delete this category? Circuits in this category will not be deleted."
         }
       />
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <DashboardContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          itemName={contextMenu.name}
+          itemType={contextMenu.type}
+          onRename={() => {
+            const item = contextMenu.type === "circuit"
+              ? circuits.find((c) => c.id === contextMenu.id)
+              : categories.find((c) => c.id === contextMenu.id);
+            
+            if (item) {
+              setRenameModal({
+                type: contextMenu.type,
+                id: contextMenu.id,
+                name: item.name,
+                description: contextMenu.type === "circuit" ? (item as Circuit).description : undefined,
+              });
+            }
+          }}
+          onDuplicate={contextMenu.type === "circuit" ? () => {
+            duplicateCircuit(contextMenu.id);
+          } : undefined}
+          onDelete={() => {
+            setConfirmDelete({
+              type: contextMenu.type,
+              id: contextMenu.id,
+            });
+          }}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {/* Rename Modal */}
+      {renameModal && (
+        <RenameModal
+          isOpen={true}
+          onClose={() => setRenameModal(null)}
+          currentName={renameModal.name}
+          currentDescription={renameModal.description}
+          itemType={renameModal.type}
+          title={`Rename ${renameModal.type === "circuit" ? "Circuit" : "Category"}`}
+          onSave={async (newName, newDescription) => {
+            if (renameModal.type === "circuit") {
+              await renameCircuit(renameModal.id, newName, newDescription);
+            } else {
+              await renameCategory(renameModal.id, newName);
+            }
+            setRenameModal(null);
+          }}
+        />
+      )}
     </div>
   );
 }

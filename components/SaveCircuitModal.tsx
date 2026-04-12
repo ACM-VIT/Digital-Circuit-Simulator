@@ -182,14 +182,17 @@ const SaveCircuitModal: React.FC<SaveCircuitModalProps> = ({
   if (!isOpen) return null;
 
   return (
+    <>
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        onClick={onClose}
-      >
+      {isOpen && (
+        <motion.div
+          key="save-circuit-modal"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={onClose}
+        >
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -361,23 +364,25 @@ const SaveCircuitModal: React.FC<SaveCircuitModalProps> = ({
           </form>
         </motion.div>
       </motion.div>
-
-      {/* Category Modal */}
-      <CategoryModal
-        isOpen={showCategoryModal}
-        onClose={() => setShowCategoryModal(false)}
-        onSave={handleCreateCategory}
-        title="Create Category"
-      />
-
-      {/* Label Modal (reusing CategoryModal) */}
-      <CategoryModal
-        isOpen={showLabelModal}
-        onClose={() => setShowLabelModal(false)}
-        onSave={handleCreateLabel}
-        title="Create Label"
-      />
+      )}
     </AnimatePresence>
+
+    {/* Category Modal */}
+    <CategoryModal
+      isOpen={showCategoryModal}
+      onClose={() => setShowCategoryModal(false)}
+      onSave={handleCreateCategory}
+      title="Create Category"
+    />
+
+    {/* Label Modal (reusing CategoryModal) */}
+    <CategoryModal
+      isOpen={showLabelModal}
+      onClose={() => setShowLabelModal(false)}
+      onSave={handleCreateLabel}
+      title="Create Label"
+    />
+    </>
   );
 };
 

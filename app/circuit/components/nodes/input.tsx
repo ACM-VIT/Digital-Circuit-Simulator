@@ -14,20 +14,24 @@ function Input(props: NodeProps) {
     const isOn = Boolean(data?.value);
 
     return (
-        <div className="relative flex h-[130px] w-[130px] min-w-[120px] flex-col items-center justify-center gap-1.5 rounded-[999px] border border-[#5f2c30] bg-gradient-to-b from-[#3d1e21] to-[#1a1011] p-4 text-white shadow-[0_10px_20px_rgba(0,0,0,0.4)]">
-            <button
-                type="button"
-                onClick={() => data?.remove?.()}
-                className="nodrag absolute left-1.5 top-1.5 rounded-full border border-white/10 bg-black/60 p-1 transition hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
-                aria-label="Delete input node"
-            >
-                <Image src="/trash.svg" alt="Delete" width={14} height={14} className="filter invert" />
-            </button>
+        <div 
+            className="relative flex h-[130px] w-[130px] min-w-[120px] flex-col items-center justify-center gap-1.5 rounded-[999px] border border-[#5f2c30] bg-gradient-to-b from-[#3d1e21] to-[#1a1011] p-4 text-white shadow-[0_10px_20px_rgba(0,0,0,0.4)]"
+            onContextMenu={(e) => data?.onContextMenu?.(e)}
+            onDoubleClick={(e) => data?.onDoubleClick?.(e)}
+        >
             <div className={`flex flex-col items-center gap-1 text-[9px] uppercase tracking-[0.35em] text-amber-200/75 ${moghul.className}`}>
                 <Image src={isOn ? '/bulbon.svg' : '/bulboff.svg'} alt={isOn ? 'Input on' : 'Input off'} width={26} height={26} />
                 <span>Input</span>
             </div>
-            <span className={`text-xs font-semibold tracking-[0.25em] text-amber-50 ${moghul.className}`}>{data?.label}</span>
+            <span 
+                className={`text-xs font-semibold tracking-[0.25em] text-amber-50 ${moghul.className} cursor-pointer hover:text-amber-100 transition-colors`}
+                onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    data?.editLabel?.();
+                }}
+            >
+                {data?.label}
+            </span>
             <button
                 type="button"
                 onClick={() => data?.toggle?.()}

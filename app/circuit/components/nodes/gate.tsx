@@ -17,6 +17,11 @@ function Gate(props: NodeProps) {
   const accentColor: string = data?.color ?? "#42345f";
   const isCombinational = data?.isCombinational ?? false;
 
+  // Calculate dynamic height based on the number of inputs/outputs
+  const maxIO = Math.max(inputs.length, outputKeys.length);
+  // Formula: 100px (header + padding) + 40px per I/O, minimum 180px
+  const dynamicHeight = Math.max(180, 100 + maxIO * 40);
+
   const getHandleOffset = (index: number, total: number) => {
     if (total <= 1) return 50;
 
@@ -26,36 +31,74 @@ function Gate(props: NodeProps) {
       const spacing = (bottomPadding - topPadding) / (total - 1);
       return topPadding + index * spacing;
     } else {
-      const spread = 70;
-      const start = (100 - spread) / 2;
-      return start + (spread * index) / (total - 1);
+      // For regular gates
+      if (total === 2) {
+        // Keep original spacing for 2 inputs
+        const spread = 70;
+        const start = (100 - spread) / 2;
+        return start + (spread * index) / (total - 1);
+      } else {
+        // For 3+ inputs, use more even spacing
+        const topPadding = 20;
+        const bottomPadding = 80;
+        const spacing = (bottomPadding - topPadding) / (total - 1);
+        return topPadding + index * spacing;
+      }
     }
   };
 
   if (isCombinational) {
     return (
       <div
-        className="relative flex flex-col w-[200px] min-h-[180px] rounded-[20px] border-2 text-white shadow-lg"
+        className="relative flex flex-col w-[200px] rounded-[20px] border-2 text-white shadow-lg"
+        onContextMenu={(e) => data?.onContextMenu?.(e)}
+        onDoubleClick={(e) => data?.onDoubleClick?.(e)}
         style={{
           background: `linear-gradient(335deg, rgba(8, 6, 12, 0.95) 0%, rgba(19, 14, 25, 0.88) 45%, ${accentColor} 100%)`,
           borderColor: accentColor,
+          minHeight: `${dynamicHeight}px`,
         }}
       >
-        <span className="mt-8 text-lg font-bold text-center">{data.name}</span>
+        <span 
+          className="mt-8 text-lg font-bold text-center cursor-pointer hover:text-gray-200 transition-colors"
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            data?.editLabel?.();
+          }}
+        >
+          {data.name}
+        </span>
 
         <div className="flex-1 flex justify-between px-4 py-4">
           {/* Inputs */}
-          <div className="flex flex-col justify-center gap-3">
-            {inputs.map((input: string, idx: number) => (
-              <Target
-                key={input}
-                id={`${id}-i-${input}`}
-                title={input}
-                style={{
-                  top: `${getHandleOffset(idx, inputs.length)}%`,
-                }}
-              />
-            ))}
+          <div className="flex flex-col justify-center gap-3 relative">
+            {inputs.map((input: string, idx: number) => {
+              const offset = getHandleOffset(idx, inputs.length);
+              
+              return (
+                <div
+                  key={input}
+                  className="absolute left-0 flex items-center gap-1"
+                  style={{
+                    top: `${offset}%`,
+                    transform: "translateY(-50%)",
+                  }}
+                >
+                  {/* Move handle slightly outside to the left */}
+                  <div className="translate-x-[-16px]">
+                    <Target
+                      id={`${id}-i-${input}`}
+                      title={input}
+                    />
+                  </div>
+                  
+                  {/* Label */}
+                  <span className="text-xs text-white whitespace-nowrap ml-1">
+                    {input}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           <div className="relative w-full">
@@ -85,36 +128,34 @@ function Gate(props: NodeProps) {
             })}
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={() => data?.remove?.()}
-          className="nodrag absolute bottom-2 right-2 rounded-full border border-white/10 bg-black/45 p-1 transition hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
-          aria-label="Delete gate node"
-        >
-          <Image
-            src="/trash.svg"
-            alt="Delete"
-            width={14}
-            height={14}
-            className="filter invert"
-          />
-        </button>
       </div>
     );
   } else {
+    // Calculate dynamic height for regular gates
+    // Base height for 2 inputs, then +40px for each additional input starting from 3
+    const regularGateHeight = inputs.length <= 2 ? undefined : `${140 + (inputs.length - 2) * 40}px`;
+    
     return (
       <div
         className={`relative flex min-w-[170px] max-w-[190px] flex-col gap-2.5 rounded-[24px] border px-4 py-4 text-slate-100 shadow-[0_10px_22px_rgba(0,0,0,0.42)] ${moghul.className}`}
+        onContextMenu={(e) => data?.onContextMenu?.(e)}
+        onDoubleClick={(e) => data?.onDoubleClick?.(e)}
         style={{
           background: `linear-gradient(335deg, rgba(8, 6, 12, 0.95) 0%, rgba(19, 14, 25, 0.88) 45%, ${accentColor} 100%)`,
           borderColor: accentColor,
+          minHeight: regularGateHeight,
         }}
       >
         <span className="text-[9px] uppercase tracking-[0.35em] text-slate-200/80">
-          Gate
+          {data?.gateType || data?.name} Gate
         </span>
-        <span className="text-base font-semibold tracking-[0.32em] uppercase text-amber-100 drop-shadow-sm">
+        <span 
+          className="text-base font-semibold tracking-[0.32em] uppercase text-amber-100 drop-shadow-sm cursor-pointer hover:text-amber-50 transition-colors"
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            data?.editLabel?.();
+          }}
+        >
           {data?.name}
         </span>
 
@@ -141,20 +182,6 @@ function Gate(props: NodeProps) {
             }}
           />
         ))}
-        <button
-          type="button"
-          onClick={() => data?.remove?.()}
-          className="nodrag absolute bottom-2 right-2 rounded-full border border-white/10 bg-black/45 p-1 transition hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
-          aria-label="Delete gate node"
-        >
-          <Image
-            src="/trash.svg"
-            alt="Delete"
-            width={14}
-            height={14}
-            className="filter invert"
-          />
-        </button>
       </div>
     );
   }
